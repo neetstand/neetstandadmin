@@ -5,7 +5,7 @@ create or replace function public.send_email(
   from_email text,
   subject text,
   html_body text
-) returns text language plpgsql set search_path = public as $$
+) returns text language plpgsql security definer set search_path = public as $$
 declare
   resp jsonb;
   api_key_val text;
@@ -33,7 +33,7 @@ begin
     ),
     body := jsonb_build_object(
       'sender', jsonb_build_object(
-        'name', 'WaHPACT',
+        'name', 'NEET Stand',
         'email', from_email
       ),
       'to', jsonb_build_array(
