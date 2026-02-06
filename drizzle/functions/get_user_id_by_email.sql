@@ -2,6 +2,8 @@
 -- This is needed because 'profiles' does not store the email string (auth.users does)
 -- and we need to find the user ID to update their password via Admin API.
 
+DROP FUNCTION IF EXISTS public.get_user_id_by_email(text);
+
 create or replace function public.get_user_id_by_email(email text)
 returns uuid
 language plpgsql

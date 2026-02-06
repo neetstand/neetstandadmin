@@ -20,7 +20,8 @@ RETURNS TRIGGER AS $$
       new.id, 
       new.raw_user_meta_data->>'full_name', 
       new.raw_user_meta_data->>'avatar_url',
-      v_role_name
+      v_role_name,
+      CASE WHEN v_role_name = 'owner' THEN false ELSE true END
     );
 
     -- 3. Sync with user_roles (Critical for permissions)

@@ -121,23 +121,39 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
         }
     };
 
+    const renderHeader = () => (
+        <>
+            <h1 className="text-3xl font-bold mb-4 text-slate-900 text-center">Owner Setup</h1>
+            <p className="text-gray-600 mb-8 text-center">
+                {(mode === "verify" || isVerificationSent)
+                    ? "Please verify your ownership."
+                    : "Setting up the Owner Account. Please provide your email to begin."}
+            </p>
+        </>
+    );
+
     if (mode === "verify" || isVerificationSent) {
         // ... (existing Check Inbox logic, ensure `handleResend` works)
         return (
-            <div className="space-y-6 text-center">
-                <div className="bg-green-50 p-6 rounded-md border border-green-100">
-                    <h3 className="text-lg font-medium text-green-900 mb-2">Check your inbox</h3>
-                    <p className="text-gray-700">Hi Mr.Owner please verify and login.</p>
-                </div>
+            <div>
+                {renderHeader()}
+                <div className="space-y-6 text-center">
+                    <div className="bg-green-50 p-6 rounded-md border border-green-100">
+                        <h3 className="text-lg font-medium text-green-900 mb-2">Verification email sent</h3>
+                        <p className="text-gray-700">
+                            We have sent a verification email to <strong>{email}</strong>. Please check your inbox and click the link to activate your account.
+                        </p>
+                    </div>
 
-                <button
-                    type="button"
-                    onClick={handleResend}
-                    disabled={loading}
-                    className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 transition-colors"
-                >
-                    {loading ? "Sending..." : "Resend verification email"}
-                </button>
+                    <button
+                        type="button"
+                        onClick={handleResend}
+                        disabled={loading}
+                        className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 transition-colors"
+                    >
+                        {loading ? "Sending..." : "Resend verification email"}
+                    </button>
+                </div>
             </div>
         );
     }
@@ -147,91 +163,105 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
         const isLogin = mode === "superadmin_setup";
 
         return (
-            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Email Address</label>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-black focus:ring-slate-500 focus:border-slate-500"
-                        placeholder="owner@example.com"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mt-4">Password</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-black focus:ring-slate-500 focus:border-slate-500"
-                        placeholder={isLogin ? "" : "Min 6 chars"}
-                    />
-                </div>
+            <div>
+                {!isLogin && renderHeader()}
+                {isLogin && (
+                    <>
+                        <h1 className="text-3xl font-bold mb-4 text-slate-900 text-center">Admin Login</h1>
+                        <p className="text-gray-600 mb-8 text-center">Please login to continue setup.</p>
+                    </>
+                )}
 
-                <div className="mt-6">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition-colors"
-                    >
-                        {loading ? "Processing..." : (isLogin ? "Login" : "Create Owner Account")}
-                    </button>
-                </div>
-            </form>
-        );
-    }
-
-    return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex items-center space-x-3 bg-blue-50 p-4 rounded-md border border-blue-100">
-                <input
-                    type="checkbox"
-                    id="isMe"
-                    checked={isMe}
-                    onChange={(e) => setIsMe(e.target.checked)}
-                    className="h-5 w-5 text-blue-600 rounded"
-                />
-                <label htmlFor="isMe" className="font-medium text-blue-900">
-                    I am the Superadmin
-                </label>
-            </div>
-
-            {!isMe && (
-                <div className="space-y-4 pt-4 border-t">
-                    <p className="text-sm font-semibold text-gray-700">Invite Superadmin</p>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-black"
-                            required={!isMe}
-                        />
-                    </div>
+                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Email Address</label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-black"
-                            required={!isMe}
+                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-black focus:ring-slate-500 focus:border-slate-500"
+                            placeholder="owner@example.com"
                         />
                     </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mt-4">Password</label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-black focus:ring-slate-500 focus:border-slate-500"
+                            placeholder={isLogin ? "" : "Min 6 chars"}
+                        />
+                    </div>
+
+                    <div className="mt-6">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                        >
+                            {loading ? "Processing..." : (isLogin ? "Login" : "Send Verification Email")}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <h1 className="text-3xl font-bold mb-4 text-slate-900 text-center">Super Admin Setup</h1>
+            <p className="text-gray-600 mb-8 text-center">Configure the first Super Admin account.</p>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="flex items-center space-x-3 bg-blue-50 p-4 rounded-md border border-blue-100">
+                    <input
+                        type="checkbox"
+                        id="isMe"
+                        checked={isMe}
+                        onChange={(e) => setIsMe(e.target.checked)}
+                        className="h-5 w-5 text-blue-600 rounded"
+                    />
+                    <label htmlFor="isMe" className="font-medium text-blue-900">
+                        I am the Superadmin
+                    </label>
                 </div>
-            )}
 
-            <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50"
-            >
-                {loading ? "Setting up..." : "Complete Setup"}
-            </button>
+                {!isMe && (
+                    <div className="space-y-4 pt-4 border-t">
+                        <p className="text-sm font-semibold text-gray-700">Invite Superadmin</p>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-black"
+                                required={!isMe}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-black"
+                                required={!isMe}
+                            />
+                        </div>
+                    </div>
+                )}
 
-        </form>
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50"
+                >
+                    {loading ? "Setting up..." : "Complete Setup"}
+                </button>
+            </form>
+        </div>
     );
 }
 

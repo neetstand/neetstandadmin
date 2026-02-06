@@ -49,6 +49,12 @@ export async function setupOwner(email: string, password: string, name: string) 
     });
 
     if (signUpError) {
+        // Silently handle "User already registered" to avoid server console noise
+        // Ensure we catch it regardless of case or minor wording differences
+        const msg = signUpError.message?.toLowerCase() || "";
+        if (msg.includes("user already registered") || signUpError.code === "user_already_exists") {
+            return { success: false, error: "User already registered" };
+        }
         console.error("SignUp Error Details:", JSON.stringify(signUpError, null, 2));
         throw signUpError;
     }
@@ -56,17 +62,8 @@ export async function setupOwner(email: string, password: string, name: string) 
     // Force sign out to prevent auto-login session from persisting
     await supabase.auth.signOut();
 
-    // 3. Send Magic Link (OTP)
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-        email
-        // No explicit redirect needed if default is fine, or set to dashboard
-    });
-
-    if (otpError) {
-        // If OTP fails, we might want to warn, but user is created.
-        console.error("Failed to send OTP:", otpError);
-        throw otpError;
-    }
+    // Standard SignUp sends confirmation email automatically (based on Supabase Project Settings).
+    // No manual Magic Link needed per user request.
 
     return { success: true };
 }

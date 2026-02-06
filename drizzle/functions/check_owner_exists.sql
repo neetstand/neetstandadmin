@@ -2,6 +2,8 @@
 -- SECURITY: definer (runs as creator to bypass RLS if needed, though profiles should be readable)
 -- Grants execute to anon/authenticated so middleware/setup page can check it.
 
+DROP FUNCTION IF EXISTS public.check_owner_exists();
+
 CREATE OR REPLACE FUNCTION public.check_owner_exists()
 RETURNS json
 LANGUAGE plpgsql

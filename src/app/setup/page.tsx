@@ -42,10 +42,7 @@ export default async function SetupPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
             <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-md border border-slate-200">
-                <h1 className="text-3xl font-bold mb-4 text-slate-900 text-center">Owner Setup</h1>
-                <p className="text-gray-600 mb-8 text-center">
-                    Setting up the Owner Account. Please provide your email to begin.
-                </p>
+                {/* Header moved to SetupForm to handle dynamic text changes */}
 
                 <SetupForm isOwnerSetup={true} mode={mode} />
             </div>
