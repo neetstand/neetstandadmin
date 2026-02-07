@@ -44,7 +44,8 @@ export async function setupOwner(email: string, password: string, name: string) 
             data: {
                 full_name: name,
                 role: 'owner'
-            }
+            },
+            emailRedirectTo: `${process.env.ADMIN_URL}/login`
         }
     });
 

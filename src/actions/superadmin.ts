@@ -56,7 +56,6 @@ export async function claimSuperAdmin() {
     if (!dbUser) {
         const [newUser] = await db.insert(profiles).values({
             id: user.id,
-            email: user.email!, // Force not null if we are here
         }).returning();
         dbUser = newUser;
     }

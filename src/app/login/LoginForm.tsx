@@ -6,9 +6,11 @@ import { login, verifyLogin } from "@/app/actions/auth";
 
 interface LoginFormProps {
     mode: "login" | "activation";
+    initialMessage?: string;
+    initialIsError?: boolean;
 }
 
-export default function LoginForm({ mode }: LoginFormProps) {
+export default function LoginForm({ mode, initialMessage = "", initialIsError = false }: LoginFormProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const initialEmail = searchParams.get("email") || "";
@@ -17,8 +19,8 @@ export default function LoginForm({ mode }: LoginFormProps) {
     const [code, setCode] = useState("");
     const [step, setStep] = useState<"EMAIL" | "CODE">(initialEmail ? "CODE" : "EMAIL");
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState("");
-    const [isError, setIsError] = useState(false);
+    const [message, setMessage] = useState(initialMessage);
+    const [isError, setIsError] = useState(initialIsError);
 
     useEffect(() => {
         if (initialEmail && step === "EMAIL") {
