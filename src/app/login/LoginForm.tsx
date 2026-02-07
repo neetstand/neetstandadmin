@@ -53,8 +53,16 @@ export default function LoginForm({ mode, initialMessage = "", initialIsError = 
         setIsError(false);
 
         try {
-            await verifyLogin(email, code);
-            router.push("/dashboard");
+            const result = await verifyLogin(email, code);
+            if (!result.success) {
+                throw new Error(result.error || "Login failed");
+            }
+
+            if (result.role === "owner") {
+                router.push("/owner-dashboard");
+            } else {
+                router.push("/dashboard");
+            }
         } catch (error: any) {
             setIsError(true);
             setMessage(error.message || "Invalid code or login failed.");

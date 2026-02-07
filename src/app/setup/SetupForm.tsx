@@ -90,7 +90,7 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
                         return;
                     }
                     toast.success("Logged in successfully.");
-                    router.push("/dashboard");
+                    router.push("/owner-dashboard");
                 } else {
                     // Superadmin Setup
                     // Server action

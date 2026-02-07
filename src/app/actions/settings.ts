@@ -2,12 +2,29 @@
 
 import { db } from "@drizzle/index";
 import { settings } from "@drizzle/schema/tables/settings";
+import { profiles } from "@drizzle/schema/tables/profiles";
 import { sql } from "drizzle-orm";
 import { updateTag } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
 export async function saveEmailSettings(formData: FormData) {
     try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        // Verify Owner Role
+        const profile = await db.query.profiles.findFirst({
+            where: (p, { eq }) => eq(p.id, user.id),
+        });
+
+        if (!profile || profile.role !== "owner") {
+            return { success: false, error: "Only the Owner can change settings." };
+        }
+
         const apiKey = formData.get("email_api_key") as string;
         const providerUrl = formData.get("email_provider_url") as string;
         const emailSiteUrl = formData.get("email_site_url") as string; // Optional if we want it
@@ -58,6 +75,15 @@ export async function sendTestEmail() {
 
         if (!user || !user.email) {
             return { success: false, error: "User not found" };
+        }
+
+        // Verify Owner Role
+        const profile = await db.query.profiles.findFirst({
+            where: (p, { eq }) => eq(p.id, user.id),
+        });
+
+        if (!profile || profile.role !== "owner") {
+            return { success: false, error: "Only the Owner can send test emails." };
         }
 
         const { error } = await supabase.rpc("send_email", {

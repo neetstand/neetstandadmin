@@ -72,8 +72,8 @@ export async function updateSession(request: NextRequest) {
                 return NextResponse.redirect(new URL('/login', request.url))
             }
 
-            // Protected routes pattern: Dashboard AND Root
-            if (path.startsWith('/dashboard') || path === '/') {
+            // Protected routes pattern: Dashboard AND Root AND Owner Dashboard
+            if (path.startsWith('/dashboard') || path.startsWith('/owner-dashboard') || path === '/') {
                 if (!user) {
                     return NextResponse.redirect(new URL('/login', request.url))
                 }
@@ -81,6 +81,18 @@ export async function updateSession(request: NextRequest) {
 
             // Redirect to dashboard if logged in and visiting login or root
             if ((path === '/login' || path === '/') && user) {
+                // Determine where to redirect based on role is hard in middleware without DB access.
+                // However, since we are doing client-side redirect in LoginForm, the LOGIN page visit is less critical.
+                // But for Root '/', we need to pick one.
+                // Middleware runs on Edge, so no DB access typically unless via API.
+                // We'll stick to /dashboard for generic redirect for now, 
+                // OR checking user metadata? User metadata has 'role'.
+
+                const role = user.user_metadata?.role;
+                if (role === 'owner') {
+                    return NextResponse.redirect(new URL('/owner-dashboard', request.url))
+                }
+
                 return NextResponse.redirect(new URL('/dashboard', request.url))
             }
         }

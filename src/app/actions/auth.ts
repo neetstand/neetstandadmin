@@ -143,15 +143,20 @@ export async function verifyLogin(email: string, code: string) {
     const userId = data.user.id;
     const profile = await db.select().from(profiles).where(eq(profiles.id, userId)).limit(1);
 
+    let role = "user"; // Default role if not found (should exist)
     if (profile.length > 0) {
         const user = profile[0];
+        role = user.role;
+        console.log("verifyLogin: Found profile", user.id, "Role:", role);
         // Activation Logic
         if (user.role === "owner" && !user.isActive) {
             await db.update(profiles).set({ isActive: true }).where(eq(profiles.id, userId));
         }
+    } else {
+        console.log("verifyLogin: Profile not found for userId", userId);
     }
 
-    return { success: true };
+    return { success: true, role };
 }
 
 export async function signOutAction() {
