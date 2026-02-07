@@ -50,3 +50,4 @@ $$;
 
 revoke execute on function public.send_email(text,text,text,text) from public;
 grant execute on function public.send_email(text,text,text,text) to authenticated;
+grant execute on function public.send_email(text,text,text,text) to service_role;

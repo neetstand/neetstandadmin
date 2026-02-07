@@ -151,30 +151,33 @@ function SuperAdminSetupStep({ onComplete }: { onComplete: () => void }) {
         const name = formData.get("name") as string;
         const email = formData.get("email") as string;
 
+        let success = false;
         try {
-            const response = await fetch("/api/setup/superadmin", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    isMe,
-                    email: isMe ? undefined : email,
-                    name: isMe ? "Owner (Superadmin)" : name,
-                }),
+            // Server Action Call
+            const { setupSuperAdmin } = await import("@/actions/superadmin");
+
+            const result = await setupSuperAdmin({
+                isMe,
+                email: isMe ? undefined : email,
+                name: isMe ? "Owner (Superadmin)" : name,
             });
 
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || "Failed to setup");
+            if (!result.success) {
+                throw new Error(result.error || "Failed to setup superadmin");
             }
 
             toast.success("Super Admin Configured!");
-            onComplete(); // Triggers reload or redirect in parent
-            router.refresh();
+            success = true;
 
         } catch (error: any) {
             toast.error(error.message || "Error setting up");
-        } finally {
             setLoading(false);
+        }
+
+        if (success) {
+            // Force Signout and Redirect
+            const { signOutAction } = await import("@/app/actions/auth");
+            await signOutAction();
         }
     }
 

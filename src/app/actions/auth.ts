@@ -113,7 +113,6 @@ export async function login(email: string) {
 
     // 4. Send Email
     const { error: emailError } = await adminAuthClient.rpc("send_email", {
-        api_key: process.env.BREVO_API_KEY || "",
         to_email: email,
         from_email: "no-reply@neetstand.com",
         subject: "NeetStand Admin Login Code",

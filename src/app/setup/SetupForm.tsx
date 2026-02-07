@@ -93,20 +93,17 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
                     router.push("/dashboard");
                 } else {
                     // Superadmin Setup
-                    const response = await fetch("/api/setup/superadmin", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            isMe,
-                            email: isMe ? undefined : email,
-                            name: isMe ? "Owner (Superadmin)" : name,
-                            superadminRoleId
-                        }),
+                    // Server action
+                    const { setupSuperAdmin } = await import("@/actions/superadmin");
+                    const result = await setupSuperAdmin({
+                        isMe,
+                        email: isMe ? undefined : email,
+                        name: isMe ? "Owner (Superadmin)" : name,
+                        superadminRoleId
                     });
 
-                    if (!response.ok) {
-                        const err = await response.json();
-                        throw new Error(err.error || "Failed to setup");
+                    if (!result.success) {
+                        throw new Error(result.error || "Failed to setup");
                     }
 
                     toast.success("Super Admin configured!");

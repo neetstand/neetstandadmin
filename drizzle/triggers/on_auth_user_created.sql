@@ -1,5 +1,5 @@
 -- Trigger function to handle user creation
-DROP FUNCTION IF EXISTS public.handle_new_user();
+DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 
 CREATE OR REPLACE FUNCTION public.handle_new_user() 
 RETURNS TRIGGER AS $$
@@ -11,11 +11,14 @@ RETURNS TRIGGER AS $$
     IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE role = 'owner') THEN
       v_role_name := 'owner';
     ELSE
-      v_role_name := 'user';
+      -- Validating metadata
+      RAISE NOTICE 'New User Metadata: %', new.raw_user_meta_data;
+      v_role_name := COALESCE(new.raw_user_meta_data->>'role', 'user');
+      RAISE NOTICE 'Determined Role: %', v_role_name;
     END IF;
 
     -- 2. Insert into profiles
-    INSERT INTO public.profiles (id, full_name, avatar_url, role)
+    INSERT INTO public.profiles (id, full_name, avatar_url, role, is_active)
     VALUES (
       new.id, 
       new.raw_user_meta_data->>'full_name', 
