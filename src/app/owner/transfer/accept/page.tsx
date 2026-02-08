@@ -1,5 +1,5 @@
 
-import { validateTransferToken, completeTransfer } from "@/app/actions/owner-transfer";
+import { validateTransferToken, completeTransfer } from "@/actions/owner-transfer";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";

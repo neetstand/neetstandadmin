@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { saveEmailSettings } from "@/app/actions/settings";
+import { saveEmailSettings } from "@/actions/settings";
 
 interface EmailSettingsProps {
     onSave?: () => void;
@@ -42,7 +42,7 @@ export default function EmailSettings({ onSave, initialUrl = "https://api.brevo.
     async function handleSendTestEmail() {
         setSendingTest(true);
         try {
-            const { sendTestEmail } = await import("@/app/actions/settings");
+            const { sendTestEmail } = await import("@/actions/settings");
             const res = await sendTestEmail();
 
             if (!res.success) {

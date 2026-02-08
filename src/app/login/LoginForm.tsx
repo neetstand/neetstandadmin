@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { login, verifyLogin } from "@/app/actions/auth";
+import { login, verifyLogin } from "@/actions/auth";
 
 interface LoginFormProps {
     mode: "login" | "activation";

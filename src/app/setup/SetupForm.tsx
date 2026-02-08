@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { setupOwner, resendOwnerOTP, verifyLogin } from "@/app/actions/auth";
+import { setupOwner, resendOwnerOTP, verifyLogin } from "@/actions/auth";
 import { toast } from "sonner";
 import { User } from "@supabase/supabase-js";
 

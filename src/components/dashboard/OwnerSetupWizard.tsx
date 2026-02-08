@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { saveEmailSettings } from "@/app/actions/settings";
+import { saveEmailSettings } from "@/actions/settings";
 import { useRouter } from "next/navigation";
 import EmailSettings from "./EmailSettings";
 
@@ -51,7 +51,7 @@ function SuperAdminSetupStep({ onComplete }: { onComplete: () => void }) {
 
         if (success) {
             // Force Signout and Redirect
-            const { signOutAction } = await import("@/app/actions/auth");
+            const { signOutAction } = await import("@/actions/auth");
             await signOutAction();
         }
     }

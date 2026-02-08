@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { initiateTransfer } from "@/app/actions/owner-transfer";
+import { initiateTransfer } from "@/actions/owner-transfer";
 import { toast } from "sonner";
 
 export default function TransferOwnership() {

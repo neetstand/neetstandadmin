@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createSuperAdminAction, sendVerificationEmailAction, confirmEmailVerificationAction } from "@/app/actions/setup";
+import { createSuperAdminAction, sendVerificationEmailAction, confirmEmailVerificationAction } from "@/actions/setup";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
