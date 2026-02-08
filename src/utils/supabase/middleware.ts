@@ -90,7 +90,7 @@ export async function updateSession(request: NextRequest) {
 
                 const role = user.user_metadata?.role;
                 if (role === 'owner') {
-                    return NextResponse.redirect(new URL('/owner-dashboard', request.url))
+                    return NextResponse.redirect(new URL('/dashboard', request.url))
                 }
 
                 return NextResponse.redirect(new URL('/dashboard', request.url))

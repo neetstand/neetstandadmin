@@ -4,7 +4,7 @@
 
 DROP FUNCTION IF EXISTS public.get_user_id_by_email(text);
 
-create or replace function public.get_user_id_by_email(email text)
+create or replace function public.get_user_id_by_email(p_email text)
 returns uuid
 language plpgsql
 security definer
@@ -13,7 +13,7 @@ as $$
 declare
   uid uuid;
 begin
-  select id into uid from auth.users where email = $1;
+  select id into uid from auth.users where email = p_email;
   return uid;
 end;
 $$;

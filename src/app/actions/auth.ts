@@ -24,7 +24,7 @@ async function isSystemOwnerSet() {
 
 // Helper RPC wrapper
 async function getUserIdByEmail(email: string): Promise<string | null> {
-    const { data, error } = await adminAuthClient.rpc("get_user_id_by_email", { email });
+    const { data, error } = await adminAuthClient.rpc("get_user_id_by_email", { p_email: email });
     if (error || !data) return null;
     return data as string;
 }
@@ -147,13 +147,10 @@ export async function verifyLogin(email: string, code: string) {
     if (profile.length > 0) {
         const user = profile[0];
         role = user.role;
-        console.log("verifyLogin: Found profile", user.id, "Role:", role);
         // Activation Logic
         if (user.role === "owner" && !user.isActive) {
             await db.update(profiles).set({ isActive: true }).where(eq(profiles.id, userId));
         }
-    } else {
-        console.log("verifyLogin: Profile not found for userId", userId);
     }
 
     return { success: true, role };

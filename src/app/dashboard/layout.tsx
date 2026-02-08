@@ -20,6 +20,14 @@ export default async function DashboardLayout({
         redirect("/login");
     }
 
+    // Fetch Role for Sidebar Visibility
+    const { db } = await import("@drizzle/index");
+    const { profiles } = await import("@drizzle/schema/tables/profiles");
+    const { eq } = await import("drizzle-orm");
+
+    const profile = await db.select().from(profiles).where(eq(profiles.id, user.id)).limit(1);
+    const userRole = profile[0]?.role || "user";
+
     // --- Blocking Setup Check ---
     // 1. Check Email Settings
     // We strictly need fetching the API Key to function.
@@ -59,6 +67,42 @@ export default async function DashboardLayout({
                     <Link href="/dashboard/admins" className="block px-4 py-2 hover:bg-slate-800 rounded">
                         Admins
                     </Link>
+                    <Link href="/dashboard/profile" className="block px-4 py-2 hover:bg-slate-800 rounded">
+                        Profile
+                    </Link>
+
+                    {/* Owner & Superadmin Section */}
+                    {(userRole === "owner" || userRole === "superadmin") && (
+                        <div className="mt-6">
+                            <h3 className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                                Global Settings
+                            </h3>
+                            <div className="space-y-1">
+                                <Link
+                                    href="/dashboard/settings/email"
+                                    className="group flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-slate-800 hover:text-white"
+                                >
+                                    <svg className="mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                    Email Service
+                                </Link>
+
+                                {userRole === "owner" && (
+                                    <Link
+                                        href="/dashboard/settings/ownership"
+                                        className="group flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-300 hover:bg-slate-800 hover:text-white"
+                                    >
+                                        <svg className="mr-3 flex-shrink-0 h-5 w-5 text-gray-400 group-hover:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                        Ownership
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <form action={signOutAction}>
                         <button className="w-full text-left px-4 py-2 hover:bg-slate-800 rounded text-red-400 cursor-pointer">
                             Sign Out

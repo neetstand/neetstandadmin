@@ -190,12 +190,4 @@ export async function setupSuperAdmin(data: { isMe: boolean, email?: string, nam
     }
 }
 
-export async function claimSuperAdmin() {
-    // ... existing claimSuperAdmin ...
-    // Keeping it for backward compatibility or future use if needed, 
-    // but setupSuperAdmin covers it.
-    // I'll leave it as is or remove if not used. 
-    // It seems "claimSuperAdmin" was an earlier attempt.
-    // The wizard uses `setupSuperAdmin` logic.
-    return { success: false, error: "Deprecated, use setupSuperAdmin" };
-}
+

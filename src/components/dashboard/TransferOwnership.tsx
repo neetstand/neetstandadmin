@@ -1,76 +1,83 @@
 "use client";
 
 import { useState } from "react";
-import { transferOwnershipAction } from "@/app/actions/setup";
+import { initiateTransfer } from "@/app/actions/owner-transfer";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 export default function TransferOwnership() {
+    const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
-    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
 
-    async function handleSubmit(formData: FormData) {
-        // Confirmation?
-        if (!confirm("Are you sure you want to transfer ownership? This action is irreversible.")) return;
+    const handleTransfer = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email) return;
+
+        if (!confirm(`Are you sure you want to transfer ownership to ${email}? You will lose Owner privileges immediately upon their acceptance. You will become a Super Admin.`)) {
+            return;
+        }
 
         setLoading(true);
-        const res = await transferOwnershipAction(null, formData);
-        setLoading(false);
-
-        if (res.success) {
-            toast.success("Ownership Transferred!");
-            router.refresh();
-        } else {
-            toast.error(res.error || "Transfer failed");
+        try {
+            await initiateTransfer(email);
+            toast.success("Transfer initiated. An email has been sent to the new owner.");
+            setIsOpen(false);
+            setEmail("");
+        } catch (error: any) {
+            toast.error(error.message || "Failed to initiate transfer");
+        } finally {
+            setLoading(false);
         }
-    }
+    };
 
     if (!isOpen) {
         return (
-            <div className="p-6 bg-white rounded shadow">
-                <h2 className="text-xl font-semibold mb-2 text-red-600">Danger Zone</h2>
-                <p className="text-gray-600 mb-4">Transfer ownership of the system to another user.</p>
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="text-red-600 hover:text-red-800 font-medium"
-                >
-                    Transfer Ownership &rarr;
-                </button>
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h2 className="text-lg font-bold text-slate-900">Owner Transfer</h2>
+                        <p className="text-sm text-slate-600">Transfer system ownership. You will be demoted to Super Admin.</p>
+                    </div>
+                    <button
+                        onClick={() => setIsOpen(true)}
+                        className="bg-red-50 text-red-600 px-4 py-2 rounded-md border border-red-200 hover:bg-red-100 font-medium text-sm transition-colors"
+                    >
+                        Initiate Transfer
+                    </button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="p-6 bg-white rounded shadow border-l-4 border-red-500">
-            <h2 className="text-xl font-semibold mb-4 text-red-600">Transfer Ownership</h2>
-            <p className="text-gray-600 mb-4 text-sm">
-                Please enter the email of the existing user you wish to transfer ownership to.
-                You will be demoted to Super Admin.
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Owner Transfer</h2>
+            <p className="text-sm text-slate-600 mb-6">
+                Transfer full system ownership to another user. This action is irreversible by you once accepted.
             </p>
-            <form action={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">New Owner Email</label>
+
+            <form onSubmit={handleTransfer} className="bg-slate-50 p-4 rounded-md border border-slate-200">
+                <label className="block text-sm font-medium text-slate-700 mb-2">New Owner Email</label>
+                <div className="flex gap-3">
                     <input
                         type="email"
-                        name="email"
                         required
-                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                        placeholder="user@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="enter.email@example.com"
+                        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"
                     />
-                </div>
-                <div className="flex space-x-3">
                     <button
                         type="submit"
                         disabled={loading}
-                        className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
+                        className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 text-sm font-medium transition-colors"
                     >
-                        {loading ? "Processing..." : "Confirm Transfer"}
+                        {loading ? "Sending..." : "Send Invite"}
                     </button>
                     <button
                         type="button"
                         onClick={() => setIsOpen(false)}
-                        className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                        className="text-slate-500 px-3 py-2 hover:text-slate-700 text-sm"
                     >
                         Cancel
                     </button>

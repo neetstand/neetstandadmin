@@ -59,7 +59,7 @@ export default function LoginForm({ mode, initialMessage = "", initialIsError = 
             }
 
             if (result.role === "owner") {
-                router.push("/owner-dashboard");
+                router.push("/dashboard");
             } else {
                 router.push("/dashboard");
             }
