@@ -112,6 +112,94 @@ export async function sendTestEmail() {
 
     } catch (error: any) {
         console.error("Test email exception:", error);
+
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getMaintenanceMode() {
+    try {
+        const result = await db.query.settings.findFirst({
+            where: (s, { eq }) => eq(s.variable, "maintenance_mode"),
+        });
+
+        return { isEnabled: result?.value === "true" };
+    } catch (error) {
+        console.error("Failed to fetch maintenance mode:", error);
+        return { isEnabled: false };
+    }
+}
+
+export async function saveMaintenanceMode(enabled: boolean) {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return { success: false, error: "Unauthorized" };
+        }
+
+        // Verify Owner or Super Admin Role
+        const profile = await db.query.profiles.findFirst({
+            where: (p, { eq }) => eq(p.id, user.id),
+        });
+
+        if (!profile || !["owner", "superadmin"].includes(profile.role)) {
+            return { success: false, error: "Only Admins can change maintenance mode." };
+        }
+
+        // Refresh Web App Cache FIRST
+        console.log("Refreshing Web App Settings. URL:", process.env.WEB_URL);
+
+        if (!process.env.WEB_URL || !process.env.ADMIN_API_KEY) {
+            console.error("Missing WEB_URL or ADMIN_API_KEY environment variables.");
+            return { success: false, error: "System Configuration Error: Missing Environment Variables" };
+        }
+
+        try {
+            const response = await fetch(`${process.env.WEB_URL}/api/settings/refresh`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${process.env.ADMIN_API_KEY}`,
+                    "Origin": process.env.ADMIN_URL || "http://localhost:4000" // Send origin for validation
+                },
+                cache: "no-store",
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                // console.error("Failed to refresh web app settings. Status:", response.status, errorText);
+                return { success: false, error: `Web App Refresh Failed: ${response.status} ${response.statusText}` };
+            } else {
+                console.log("Successfully refreshed web app settings");
+            }
+        } catch (err: any) {
+            console.error("Failed to connect to web app for settings refresh:", err);
+            // Per user instruction: "If it worked then we can upsert". 
+            // If connection fails (e.g. timeout), do NOT update DB.
+            return { success: false, error: `Connection to Web App Failed: ${err.message}` };
+        }
+
+        // Upsert setting ONLY if API call succeeded
+        await db.insert(settings).values({
+            variable: "maintenance_mode",
+            value: String(enabled),
+            description: "Maintenance Mode Status",
+            updatedAt: new Date()
+        }).onConflictDoUpdate({
+            target: settings.variable,
+            set: {
+                value: String(enabled),
+                updatedAt: new Date()
+            }
+        });
+
+        updateTag("settings");
+
+        return { success: true };
+
+    } catch (error: any) {
+        console.error("Failed to save maintenance mode:", error);
         return { success: false, error: error.message };
     }
 }

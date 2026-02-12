@@ -59,8 +59,11 @@ export default function LoginForm({ mode, initialMessage = "", initialIsError = 
             }
 
             if (result.role === "owner") {
+                // Strict Tab Session: Mark this tab as authenticated
+                sessionStorage.setItem("admin_session", "active");
                 router.push("/dashboard");
             } else {
+                sessionStorage.setItem("admin_session", "active");
                 router.push("/dashboard");
             }
         } catch (error: any) {
@@ -126,6 +129,9 @@ export default function LoginForm({ mode, initialMessage = "", initialIsError = 
                                 maxLength={8}
                                 placeholder="XXXXXXXX"
                             />
+                            <p className="mt-2 text-xs text-gray-500 text-center">
+                                This code is valid for 10 minutes.
+                            </p>
                         </div>
                         <button
                             type="submit"

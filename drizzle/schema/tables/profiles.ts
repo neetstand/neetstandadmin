@@ -17,6 +17,7 @@ export const profiles = pgTable("profiles", {
     email: boolean("email").default(true).notNull(),
     sms: boolean("sms").default(true).notNull(),
     phone: boolean("phone").default(true).notNull(),
+    otpGeneratedAt: timestamp("otp_generated_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

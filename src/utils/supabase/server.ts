@@ -8,15 +8,20 @@ export async function createClient() {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
+            cookieOptions: {
+                name: "sb-admin-auth-token",
+            },
             cookies: {
                 getAll() {
                     return cookieStore.getAll();
                 },
                 setAll(cookiesToSet) {
                     try {
-                        cookiesToSet.forEach(({ name, value, options }) =>
-                            cookieStore.set(name, value, options)
-                        );
+                        cookiesToSet.forEach(({ name, value, options }) => {
+                            // Strip maxAge and expires to make it a session cookie (browser close = logout)
+                            const { maxAge, expires, ...sessionOptions } = options;
+                            cookieStore.set(name, value, sessionOptions);
+                        });
                     } catch {
                         // The `setAll` method was called from a Server Component.
                         // This can be ignored if you have middleware refreshing

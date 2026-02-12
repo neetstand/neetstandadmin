@@ -111,6 +111,11 @@ export async function login(email: string) {
 
     if (updateError) throw updateError;
 
+    // Save OTP generation time
+    await db.update(profiles)
+        .set({ otpGeneratedAt: new Date() })
+        .where(eq(profiles.id, userId));
+
     // 4. Send Email
     const { error: emailError } = await adminAuthClient.rpc("send_email", {
         to_email: email,
@@ -147,6 +152,27 @@ export async function verifyLogin(email: string, code: string) {
     if (profile.length > 0) {
         const user = profile[0];
         role = user.role;
+
+        // OTP Expiry Check (10 minutes)
+        if (user.role === "owner" || user.role === "superadmin") { // Apply to admins
+            const otpTime = user.otpGeneratedAt;
+            if (!otpTime) {
+                // No timestamp means old OTP or error. Since we just added this, 
+                // we might want to allow it ONCE or strictly reject. 
+                // Strict security: Reject.
+                await supabase.auth.signOut();
+                return { success: false, error: "OTP expired or invalid. Please request a new one." };
+            }
+
+            const now = new Date();
+            const diffMinutes = (now.getTime() - new Date(otpTime).getTime()) / 1000 / 60;
+
+            if (diffMinutes > 10) {
+                await supabase.auth.signOut();
+                return { success: false, error: "OTP has expired. Please request a new one." };
+            }
+        }
+
         // Activation Logic
         if (user.role === "owner" && !user.isActive) {
             await db.update(profiles).set({ isActive: true }).where(eq(profiles.id, userId));

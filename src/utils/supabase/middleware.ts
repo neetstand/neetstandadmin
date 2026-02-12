@@ -13,6 +13,9 @@ export async function updateSession(request: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
+            cookieOptions: {
+                name: "sb-admin-auth-token",
+            },
             cookies: {
                 getAll() {
                     return request.cookies.getAll()
@@ -22,9 +25,11 @@ export async function updateSession(request: NextRequest) {
                     response = NextResponse.next({
                         request,
                     })
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        response.cookies.set(name, value, options)
-                    )
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        // Strip maxAge and expires to make it a session cookie
+                        const { maxAge, expires, ...sessionOptions } = options;
+                        response.cookies.set(name, value, sessionOptions);
+                    })
                 },
             },
         }
