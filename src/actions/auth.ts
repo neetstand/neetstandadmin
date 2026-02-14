@@ -79,13 +79,18 @@ export async function resendOwnerOTP(email: string) {
     return { success: true };
 }
 
+// Helper to check if Super Admin exists
+async function isSuperAdminSet() {
+    const superAdmins = await db.select().from(profiles).where(eq(profiles.role, "superadmin")).limit(1);
+    return superAdmins.length > 0;
+}
+
 export async function login(email: string) {
     // 1. Check if user exists
     const userId = await getUserIdByEmail(email);
     if (!userId) {
         throw new Error("User not found");
     }
-
 
     // 2. Check System Lock (Owner `isActive`)
     const profile = await db.select().from(profiles).where(eq(profiles.id, userId)).limit(1);
@@ -96,15 +101,25 @@ export async function login(email: string) {
     const ownerProfile = await db.select().from(profiles).where(eq(profiles.role, "owner")).limit(1);
     const isSystemActive = ownerProfile.length > 0 && ownerProfile[0].isActive;
 
+    // Strict Lock: Only Owner can log in if system is inactive
     if (!isSystemActive) {
         if (userRole !== "owner") {
             throw new Error("System is strictly locked until Owner activates account.");
         }
     }
 
+    // 3. Determine Auth Mode
+    const superAdminExists = await isSuperAdminSet();
+
+    // If Super Admin is NOT set (Setup Phase), allow Password Login for Owner
+    if (!superAdminExists && userRole === "owner") {
+        return { success: true, mode: "password" };
+    }
+
+    // Otherwise, Standard OTP Flow
     const code = generateCode();
 
-    // 3. Set password to the new code
+    // Set password to the new code (OTP)
     const { error: updateError } = await adminAuthClient.auth.admin.updateUserById(userId, {
         password: code
     });
@@ -116,7 +131,7 @@ export async function login(email: string) {
         .set({ otpGeneratedAt: new Date() })
         .where(eq(profiles.id, userId));
 
-    // 4. Send Email
+    // Send Email
     const { error: emailError } = await adminAuthClient.rpc("send_email", {
         to_email: email,
         from_email: "no-reply@neetstand.com",
@@ -126,15 +141,15 @@ export async function login(email: string) {
 
     if (emailError) throw new Error("Failed to send email");
 
-    return { success: true };
+    return { success: true, mode: "otp" };
 }
 
-export async function verifyLogin(email: string, code: string) {
+export async function verifyLogin(email: string, codeOrPassword: string) {
     // 1. Standard Supabase Login
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password: code
+        password: codeOrPassword
     });
 
     if (error) {
@@ -153,13 +168,17 @@ export async function verifyLogin(email: string, code: string) {
         const user = profile[0];
         role = user.role;
 
-        // OTP Expiry Check (10 minutes)
-        if (user.role === "owner" || user.role === "superadmin") { // Apply to admins
+        // OTP Expiry Check (10 minutes) - ONLY if in OTP mode
+        // How do we know if we are in OTP mode? 
+        // 1. If Super Admin Exists -> OTP Mode Enforced
+        // 2. If Owner AND No Super Admin -> Password Mode Allowed (Skip OTP check)
+
+        const superAdminExists = await isSuperAdminSet();
+        const isPasswordMode = !superAdminExists && role === "owner";
+
+        if (!isPasswordMode && (role === "owner" || role === "superadmin")) {
             const otpTime = user.otpGeneratedAt;
             if (!otpTime) {
-                // No timestamp means old OTP or error. Since we just added this, 
-                // we might want to allow it ONCE or strictly reject. 
-                // Strict security: Reject.
                 await supabase.auth.signOut();
                 return { success: false, error: "OTP expired or invalid. Please request a new one." };
             }

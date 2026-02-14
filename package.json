@@ -12,7 +12,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "gen:types": "npx supabase gen types typescript --project-id yndskfdokspoqxflhtws --schema public > src/types/database.types.ts",
-    "promote:owner": "tsx src/scripts/promote-owner.ts"
+    "db:fresh": "npx tsx scripts/fresh-db.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

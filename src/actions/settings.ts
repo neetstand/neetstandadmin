@@ -7,7 +7,14 @@ import { sql } from "drizzle-orm";
 import { updateTag } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
-export async function saveEmailSettings(formData: FormData) {
+export interface EmailSettings {
+    apiKey: string;
+    providerUrl: string;
+    senderEmail?: string;
+    senderName?: string;
+}
+
+export async function saveEmailSettings(settingsData: EmailSettings) {
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -25,9 +32,7 @@ export async function saveEmailSettings(formData: FormData) {
             return { success: false, error: "Only the Owner can change settings." };
         }
 
-        const apiKey = formData.get("email_api_key") as string;
-        const providerUrl = formData.get("email_provider_url") as string;
-        const emailSiteUrl = formData.get("email_site_url") as string; // Optional if we want it
+        const { apiKey, providerUrl, senderEmail, senderName } = settingsData;
 
         if (!apiKey) {
             return { success: false, error: "API Key is required" };
@@ -36,14 +41,14 @@ export async function saveEmailSettings(formData: FormData) {
         const valuesToInsert = [
             { variable: "email_api_key", value: apiKey, description: "API KEY" },
             { variable: "email_provider_url", value: providerUrl || "https://api.brevo.com/v3/smtp/email", description: "Email Provider URL" },
+            { variable: "email_sender_email", value: senderEmail || "", description: "Sender Email Address" },
+            { variable: "email_sender_name", value: senderName || "", description: "Sender Name" },
         ];
-
-        if (emailSiteUrl) {
-            valuesToInsert.push({ variable: "email_site_url", value: emailSiteUrl, description: "Email Site URL" });
-        }
 
         // Upsert settings
         for (const item of valuesToInsert) {
+            // Skip empty optional values if you don't want to overwrite with empty strings? 
+            // Actually, saving empty string is fine, it means "reset".
             await db.insert(settings).values({
                 variable: item.variable,
                 value: item.value,
@@ -86,9 +91,11 @@ export async function sendTestEmail() {
             return { success: false, error: "Only the Owner can send test emails." };
         }
 
+        // We pass a placeholder or the user's email as 'from', but the SQL function 
+        // will ideally override it with the configured Sender Email.
         const { error } = await supabase.rpc("send_email", {
             to_email: user.email,
-            from_email: "no-reply@neetstand.com", // Default sender
+            from_email: "no-reply@neetstand.com", // This will be potentially overridden by SQL logic if settings exist
             subject: "Email Configuration Verified - NEET Stand",
             html_body: `
                 <div style="font-family: sans-serif; color: #333;">
@@ -104,7 +111,6 @@ export async function sendTestEmail() {
 
         if (error) {
             console.error("Test email failed:", error);
-            // The RPC might return a JSON string with error field if manually thrown
             return { success: false, error: error.message || "Failed to send test email" };
         }
 
@@ -113,6 +119,97 @@ export async function sendTestEmail() {
     } catch (error: any) {
         console.error("Test email exception:", error);
 
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getEmailSettings() {
+    try {
+        const results = await db.query.settings.findMany({
+            where: (s, { inArray }) => inArray(s.variable, [
+                "email_api_key",
+                "email_provider_url",
+                "email_site_url",
+                "email_verified",
+                "email_sender_email",
+                "email_sender_name"
+            ]),
+        });
+
+        // Convert array to object
+        const settingsMap: Record<string, string> = {
+            apiKey: "",
+            providerUrl: "",
+            senderEmail: "",
+            senderName: ""
+        };
+
+        for (const r of results) {
+            if (r.variable === "email_api_key") settingsMap.apiKey = r.value;
+            if (r.variable === "email_provider_url") settingsMap.providerUrl = r.value;
+            if (r.variable === "email_sender_email") settingsMap.senderEmail = r.value;
+            if (r.variable === "email_sender_name") settingsMap.senderName = r.value;
+            if (r.variable === "email_verified") settingsMap.email_verified = r.value;
+        }
+
+        return settingsMap;
+    } catch (error) {
+        console.error("Failed to fetch email settings:", error);
+        return {};
+    }
+}
+
+export async function checkEmailSettingsConfigured() {
+    try {
+        const settings = await getEmailSettings();
+        // We consider it configured if API Key exists AND email_verified is true
+        // But wait, owner dashboard logic says: "Step 1: Email Setup".
+        // If !isEmailConfigured => Show Setup Form.
+        // The setup form handles saving settings AND sending verification.
+        // The verification step SETS 'email_verified' = true.
+        // So we should check if 'email_verified' === 'true'.
+
+        return settings["email_verified"] === "true";
+    } catch (error) {
+        console.error("Failed to check email settings configuration:", error);
+        return false;
+    }
+}
+
+export async function verifyEmailSetup() {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) return { success: false, error: "Unauthorized" };
+
+        // Verify Owner Role
+        const profile = await db.query.profiles.findFirst({
+            where: (p, { eq }) => eq(p.id, user.id),
+        });
+
+        if (!profile || profile.role !== "owner") {
+            return { success: false, error: "Only the Owner can verify email setup." };
+        }
+
+        // Set email_verified = true
+        await db.insert(settings).values({
+            variable: "email_verified",
+            value: "true",
+            description: "Email Configuration Verified Status",
+            updatedAt: new Date()
+        }).onConflictDoUpdate({
+            target: settings.variable,
+            set: {
+                value: "true",
+                updatedAt: new Date()
+            }
+        });
+
+        updateTag("settings");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to verify email setup:", error);
         return { success: false, error: error.message };
     }
 }

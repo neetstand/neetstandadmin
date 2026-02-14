@@ -16,44 +16,58 @@ export default function LoginForm({ mode, initialMessage = "", initialIsError = 
     const initialEmail = searchParams.get("email") || "";
 
     const [email, setEmail] = useState(initialEmail);
-    const [code, setCode] = useState("");
-    const [step, setStep] = useState<"EMAIL" | "CODE">(initialEmail ? "CODE" : "EMAIL");
+    const [dataInput, setDataInput] = useState(""); // Shared for Password or Code
+    const [step, setStep] = useState<"EMAIL" | "INPUT">(initialEmail ? "INPUT" : "EMAIL");
+    const [loginMode, setLoginMode] = useState<"password" | "otp">("otp");
+
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(initialMessage);
     const [isError, setIsError] = useState(initialIsError);
 
     useEffect(() => {
         if (initialEmail && step === "EMAIL") {
-            // initial handling
+            // initial handling if needed
         }
     }, [initialEmail, step]);
 
-    const handleSendCode = async (e: React.FormEvent) => {
+    const handleInitiateLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setMessage("");
         setIsError(false);
 
         try {
-            await login(email);
-            setStep("CODE");
-            setMessage("Code sent to your email.");
+            const result = await login(email);
+            // Result will contain { success: true, mode: 'password' | 'otp' }
+            // If explicit mode is not returned (legacy), default to otp? But our updated action returns it.
+            // Let's assume action is updated.
+            const mode = (result as any).mode || "otp";
+
+            setLoginMode(mode);
+            setStep("INPUT");
+            setDataInput(""); // Clear input
+
+            if (mode === "otp") {
+                setMessage("Code sent to your email.");
+            } else {
+                setMessage("Please enter your password.");
+            }
         } catch (error: any) {
             setIsError(true);
-            setMessage(error.message || "Failed to send code.");
+            setMessage(error.message || "Failed to initiate login.");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleVerifyCode = async (e: React.FormEvent) => {
+    const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setMessage("");
         setIsError(false);
 
         try {
-            const result = await verifyLogin(email, code);
+            const result = await verifyLogin(email, dataInput);
             if (!result.success) {
                 throw new Error(result.error || "Login failed");
             }
@@ -68,7 +82,7 @@ export default function LoginForm({ mode, initialMessage = "", initialIsError = 
             }
         } catch (error: any) {
             setIsError(true);
-            setMessage(error.message || "Invalid code or login failed.");
+            setMessage(error.message || "Invalid credentials.");
             setLoading(false);
         }
     };
@@ -86,7 +100,7 @@ export default function LoginForm({ mode, initialMessage = "", initialIsError = 
                 {!subtitle && <div className="mb-6"></div>}
 
                 {step === "EMAIL" ? (
-                    <form onSubmit={handleSendCode} className="space-y-4">
+                    <form onSubmit={handleInitiateLogin} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Email</label>
                             <input
@@ -103,13 +117,15 @@ export default function LoginForm({ mode, initialMessage = "", initialIsError = 
                             disabled={loading}
                             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition-colors"
                         >
-                            {loading ? "Sending..." : "Send Code"}
+                            {loading ? "Checking..." : "Next"}
                         </button>
                     </form>
                 ) : (
-                    <form onSubmit={handleVerifyCode} className="space-y-4">
+                    <form onSubmit={handleVerify} className="space-y-4">
                         <div className="text-center mb-4">
-                            <span className="text-sm text-gray-500">Code sent to {email}</span>
+                            <span className="text-sm text-gray-500">
+                                {loginMode === "otp" ? `Code sent to ${email}` : `Logging in as ${email}`}
+                            </span>
                             <button
                                 type="button"
                                 onClick={() => setStep("EMAIL")}
@@ -118,38 +134,57 @@ export default function LoginForm({ mode, initialMessage = "", initialIsError = 
                                 Change
                             </button>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Enter 8-digit Code</label>
-                            <input
-                                type="text"
-                                value={code}
-                                onChange={(e) => setCode(e.target.value)}
-                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-black tracking-[0.5em] text-center font-mono text-lg focus:ring-slate-500 focus:border-slate-500"
-                                required
-                                maxLength={8}
-                                placeholder="XXXXXXXX"
-                            />
-                            <p className="mt-2 text-xs text-gray-500 text-center">
-                                This code is valid for 10 minutes.
-                            </p>
-                        </div>
+
+                        {loginMode === "otp" ? (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Enter 8-digit Code</label>
+                                <input
+                                    type="text"
+                                    value={dataInput}
+                                    onChange={(e) => setDataInput(e.target.value)}
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-black tracking-[0.5em] text-center font-mono text-lg focus:ring-slate-500 focus:border-slate-500"
+                                    required
+                                    maxLength={8}
+                                    placeholder="XXXXXXXX"
+                                />
+                                <p className="mt-2 text-xs text-gray-500 text-center">
+                                    This code is valid for 10 minutes.
+                                </p>
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Password</label>
+                                <input
+                                    type="password"
+                                    value={dataInput}
+                                    onChange={(e) => setDataInput(e.target.value)}
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-white text-black focus:ring-slate-500 focus:border-slate-500"
+                                    required
+                                    placeholder="Enter your password"
+                                />
+                            </div>
+                        )}
+
                         <button
                             type="submit"
                             disabled={loading}
                             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 transition-colors"
                         >
-                            {loading ? "Verifying..." : "Verify & Login"}
+                            {loading ? "Verifying..." : (loginMode === "otp" ? "Verify & Login" : "Login")}
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                handleSendCode({ preventDefault: () => { } } as any);
-                            }}
-                            disabled={loading}
-                            className="w-full text-sm text-gray-600 hover:text-gray-900 mt-2"
-                        >
-                            Resend Code
-                        </button>
+
+                        {loginMode === "otp" && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    handleInitiateLogin({ preventDefault: () => { } } as any);
+                                }}
+                                disabled={loading}
+                                className="w-full text-sm text-gray-600 hover:text-gray-900 mt-2"
+                            >
+                                Resend Code
+                            </button>
+                        )}
                     </form>
                 )}
 
