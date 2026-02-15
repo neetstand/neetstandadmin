@@ -15,6 +15,9 @@ try {
     console.log("\n🗑️  Resetting Database...");
     execSync("npx tsx scripts/reset-db.ts", { stdio: "inherit", cwd: targetCwd });
 
+    console.log("\n📜 Deploying SQL Functions, Triggers & Policies...");
+    execSync("npx tsx scripts/deploy-sql.ts", { stdio: "inherit", cwd: targetCwd });
+
     console.log("\n🌱 Seeding Roles...");
     execSync("npx tsx scripts/seed-roles.ts", { stdio: "inherit", cwd: targetCwd });
 

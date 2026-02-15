@@ -1,7 +1,8 @@
 
 "use server";
 
-import { adminAuthClient } from "@/utils/supabase/admin";
+import { createAdminClient } from "@/utils/supabase/admin";
+
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@drizzle/index";
 import { profiles } from "@drizzle/schema/tables/profiles";
@@ -76,7 +77,7 @@ export async function initiateTransfer(newOwnerEmail: string) {
 
     // 3. Send Email
     const link = `${process.env.ADMIN_URL}/owner/transfer/accept?token=${token}`;
-
+    const adminAuthClient = createAdminClient();
     const { error: emailError } = await adminAuthClient.rpc("send_email", {
         to_email: newOwnerEmail,
         from_email: "no-reply@neetstand.com",
@@ -156,6 +157,7 @@ export async function completeTransfer(token: string, newOwnerEmail: string) {
         .where(eq(profiles.id, newOwnerId));
 
     // C. Update Metadata in Auth for both (optional but good for syncing)
+    const adminAuthClient = createAdminClient();
     await adminAuthClient.auth.admin.updateUserById(from_owner_id, {
         user_metadata: { role: 'superadmin' }
     });

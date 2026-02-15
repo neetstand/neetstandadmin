@@ -267,9 +267,8 @@ export async function saveMaintenanceMode(enabled: boolean) {
                 const errorText = await response.text();
                 // console.error("Failed to refresh web app settings. Status:", response.status, errorText);
                 return { success: false, error: `Web App Refresh Failed: ${response.status} ${response.statusText}` };
-            } else {
-                console.log("Successfully refreshed web app settings");
             }
+            // else { console.log("Successfully refreshed web app settings"); }
         } catch (err: any) {
             console.error("Failed to connect to web app for settings refresh:", err);
             // Per user instruction: "If it worked then we can upsert". 

@@ -1,6 +1,7 @@
 "use server";
 
-import { adminAuthClient } from "@/utils/supabase/admin";
+import { createAdminClient } from "@/utils/supabase/admin";
+
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@drizzle/index";
 import { profiles } from "@drizzle/schema/tables/profiles";
@@ -111,6 +112,7 @@ export async function createSuperAdminAction(prevState: any, formData: FormData)
             if (!email) return { success: false, error: "Email is required" };
 
             // Check if user exists via Admin API
+            const adminAuthClient = createAdminClient();
             const { data: { users: existingUsers } } = await adminAuthClient.auth.admin.listUsers();
             const existingUser = existingUsers.find(u => u.email === email);
 
@@ -124,6 +126,8 @@ export async function createSuperAdminAction(prevState: any, formData: FormData)
                 }).onConflictDoNothing();
             } else {
                 // Invite Logic
+                // We reuse adminAuthClient if desired or create new. It's cheap.
+                const adminAuthClient = createAdminClient();
                 const { data: newUser, error: createError } = await adminAuthClient.auth.admin.createUser({
                     email,
                     email_confirm: true,
@@ -183,6 +187,7 @@ export async function transferOwnershipAction(prevState: any, formData: FormData
         if (!newOwnerEmail) return { success: false, error: "Email required" };
 
         // 1. Find Target User
+        const adminAuthClient = createAdminClient();
         const { data: { users } } = await adminAuthClient.auth.admin.listUsers();
         const targetUser = users.find(u => u.email === newOwnerEmail);
 

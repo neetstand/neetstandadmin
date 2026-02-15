@@ -1,5 +1,5 @@
 -- Function to check if the current user is an admin
-DROP FUNCTION IF EXISTS public.is_app_admin();
+DROP FUNCTION IF EXISTS public.is_app_admin() CASCADE;
 
 CREATE OR REPLACE FUNCTION public.is_app_admin()
 RETURNS boolean

@@ -2,7 +2,8 @@ import { db } from "@drizzle/index";
 import { settings } from "@drizzle/schema/tables/settings";
 import { eq } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
-import { adminAuthClient } from "@/utils/supabase/admin";
+import { createAdminClient } from "@/utils/supabase/admin";
+
 
 export const getCachedEmailSettings = unstable_cache(
     async () => {
@@ -43,6 +44,7 @@ export async function sendEmail({
 
     // Use the RPC function `send_email`
     // Signature: send_email(to_email, from_email, subject, html_body)
+    const adminAuthClient = createAdminClient();
     const { data, error } = await adminAuthClient.rpc("send_email", {
         to_email: to,
         from_email: "no-reply@neetstand.com", // Default sender

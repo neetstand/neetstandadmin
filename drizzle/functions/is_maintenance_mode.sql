@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS public.is_maintenance_mode();
+DROP FUNCTION IF EXISTS public.is_maintenance_mode() CASCADE;
 
 CREATE OR REPLACE FUNCTION public.is_maintenance_mode()
 RETURNS boolean

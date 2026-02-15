@@ -4,7 +4,8 @@ import { db } from "@drizzle/index";
 import { profiles, roles, userRoles } from "@drizzle/schema/index";
 import { eq, and } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server";
-import { adminAuthClient } from "@/utils/supabase/admin";
+import { createAdminClient } from "@/utils/supabase/admin";
+
 
 export async function checkSuperAdminExists() {
     const superAdminRole = await db.query.roles.findFirst({
@@ -73,6 +74,7 @@ export async function setupSuperAdmin(data: { isMe: boolean, email?: string, nam
         } else {
             // Invite logic
             // Check if user exists in Auth by email
+            const adminAuthClient = createAdminClient();
             const { data: { users: authUsers }, error: listError } = await adminAuthClient.auth.admin.listUsers();
 
             if (listError) throw listError;
@@ -93,6 +95,7 @@ export async function setupSuperAdmin(data: { isMe: boolean, email?: string, nam
                 // User not in Auth -> Create them explicitly (bypassing invite email)
                 if (!email) throw new Error("Email is required for invitation");
 
+                const adminAuthClient = createAdminClient();
                 const { data: newUser, error: createError } = await adminAuthClient.auth.admin.createUser({
                     email,
                     email_confirm: true, // Auto-confirm email
@@ -154,6 +157,7 @@ export async function setupSuperAdmin(data: { isMe: boolean, email?: string, nam
         // 3. Send Welcome Email
         if (!isMe && email) {
             const loginUrl = `${process.env.ADMIN_URL}/login`;
+            const adminAuthClient = createAdminClient();
             const { error: emailError } = await adminAuthClient.rpc("send_email", {
                 to_email: email,
                 from_email: "no-reply@neetstand.com",

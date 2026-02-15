@@ -1,5 +1,5 @@
 -- Drop the function if it exists
-DROP FUNCTION IF EXISTS public.check_system_status();
+DROP FUNCTION IF EXISTS public.check_system_status() CASCADE;
 
 -- Create the function
 CREATE OR REPLACE FUNCTION public.check_system_status()

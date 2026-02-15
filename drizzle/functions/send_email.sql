@@ -3,7 +3,7 @@ drop schema if exists net cascade;
 
 create extension if not exists pg_net;
 
-drop function if exists public.send_email(text,text,text,text,text);
+drop function if exists public.send_email(text,text,text,text,text) cascade;
 
 create or replace function public.send_email(
   to_email text,

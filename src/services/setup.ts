@@ -1,7 +1,8 @@
 import { db } from "@drizzle/index";
 import { roles, userRoles, profiles } from "@drizzle/schema/index";
 import { eq } from "drizzle-orm";
-import { adminAuthClient } from "@/utils/supabase/admin";
+import { createAdminClient } from "@/utils/supabase/admin";
+
 
 interface SetupStatus {
     ownerExists: boolean;
@@ -56,6 +57,7 @@ export class SetupService {
 
     static async getOwnerStatus(): Promise<{ exists: boolean, active: boolean, superAdminExists: boolean }> {
         // Use the new system status RPC
+        const adminAuthClient = createAdminClient();
         const { data, error } = await adminAuthClient.rpc("check_system_status");
 
         if (error || !data) {

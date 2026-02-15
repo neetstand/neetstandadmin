@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS public.get_user_department_id(uuid);
+DROP FUNCTION IF EXISTS public.get_user_department_id(uuid) CASCADE;
 
 CREATE OR REPLACE FUNCTION public.get_user_department_id(user_uuid uuid)
 RETURNS uuid

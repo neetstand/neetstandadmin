@@ -5,7 +5,8 @@ import { signOutAction } from "@/actions/auth";
 import { db } from "@drizzle/index";
 import { settings } from "@drizzle/schema/tables/settings";
 import { eq } from "drizzle-orm";
-import { adminAuthClient } from "@/utils/supabase/admin";
+import { createAdminClient } from "@/utils/supabase/admin";
+
 import OwnerSetupWizard from "@/components/dashboard/OwnerSetupWizard";
 import SessionGuard from "@/components/auth/SessionGuard";
 
@@ -36,6 +37,7 @@ export default async function DashboardLayout({
     const hasEmailConfig = emailSetting.length > 0 && !!emailSetting[0].value;
 
     // 2. Check Super Admin Status
+    const adminAuthClient = createAdminClient();
     const { data: status } = await adminAuthClient.rpc("check_system_status");
     const hasSuperAdmin = status?.superadmin_exists || false;
 

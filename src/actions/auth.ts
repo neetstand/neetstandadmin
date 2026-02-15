@@ -1,6 +1,7 @@
 "use server";
 
-import { adminAuthClient } from "@/utils/supabase/admin";
+import { createAdminClient } from "@/utils/supabase/admin";
+
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@drizzle/index";
@@ -24,6 +25,7 @@ async function isSystemOwnerSet() {
 
 // Helper RPC wrapper
 async function getUserIdByEmail(email: string): Promise<string | null> {
+    const adminAuthClient = createAdminClient();
     const { data, error } = await adminAuthClient.rpc("get_user_id_by_email", { p_email: email });
     if (error || !data) return null;
     return data as string;
@@ -120,6 +122,7 @@ export async function login(email: string) {
     const code = generateCode();
 
     // Set password to the new code (OTP)
+    const adminAuthClient = createAdminClient();
     const { error: updateError } = await adminAuthClient.auth.admin.updateUserById(userId, {
         password: code
     });
@@ -132,6 +135,7 @@ export async function login(email: string) {
         .where(eq(profiles.id, userId));
 
     // Send Email
+    // Re-use client or create new if needed, but we already have one
     const { error: emailError } = await adminAuthClient.rpc("send_email", {
         to_email: email,
         from_email: "no-reply@neetstand.com",
@@ -206,6 +210,7 @@ export async function signOutAction() {
     await supabase.auth.signOut();
 
     // Check system status to determine redirect destination
+    const adminAuthClient = createAdminClient();
     const { data } = await adminAuthClient.rpc("check_system_status");
 
     if (data && !data.superadmin_exists) {

@@ -4,7 +4,8 @@ import { db } from "@drizzle/index";
 import { profiles, roles } from "@drizzle/schema/index";
 import { eq } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server";
-import { adminAuthClient } from "@/utils/supabase/admin";
+import { createAdminClient } from "@/utils/supabase/admin";
+
 import { revalidatePath } from "next/cache";
 
 // Helper: Get user hierarchy level
@@ -55,6 +56,7 @@ export async function getAdmins() {
     });
 
     // 4. Fetch Emails from Auth
+    const adminAuthClient = createAdminClient();
     const { data: { users }, error: authError } = await adminAuthClient.auth.admin.listUsers();
 
     if (authError || !users) {
@@ -110,6 +112,7 @@ export async function deleteAdmin(targetUserId: string) {
     }
 
     // 5. Perform Deletion
+    const adminAuthClient = createAdminClient();
     const { error } = await adminAuthClient.auth.admin.deleteUser(targetUserId);
 
     if (error) {
