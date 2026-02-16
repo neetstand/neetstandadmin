@@ -45,3 +45,9 @@ USING (is_app_admin());
 CREATE POLICY "Admins can delete profiles" ON public.profiles 
 FOR DELETE TO authenticated 
 USING (is_app_admin());
+
+-- 4. "Users can update own profile"
+CREATE POLICY "Users can update own profile" ON public.profiles 
+FOR UPDATE TO authenticated 
+USING ((select auth.uid()) = id)
+WITH CHECK ((select auth.uid()) = id);
