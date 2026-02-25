@@ -154,6 +154,44 @@ export async function setupSuperAdmin(data: { isMe: boolean, email?: string, nam
             });
         }
 
+        // Unlock the application (Turn off maintenance mode)
+        const { settings } = await import("@drizzle/schema/tables/settings");
+        await db.insert(settings).values({
+            variable: "maintenance_mode",
+            value: "false",
+            description: "Locks the application until a superadmin is configured."
+        }).onConflictDoUpdate({
+            target: settings.variable,
+            set: {
+                value: "false",
+                description: "Locks the application until a superadmin is configured.",
+                updatedAt: new Date()
+            }
+        });
+
+        // Invalidate admin settings cache
+        const { updateTag } = await import("next/cache");
+        updateTag("settings");
+
+        // Ping Web App to invalidate frontend cache
+        try {
+            const webUrl = process.env.WEB_URL || "http://localhost:3000";
+            const adminApiKey = process.env.ADMIN_API_KEY;
+
+            if (adminApiKey) {
+                // Do not await this if we want it to be fire-and-forget, or await it carefully
+                await fetch(`${webUrl}/api/settings/refresh`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${adminApiKey}`,
+                        "Origin": process.env.ADMIN_URL || "http://localhost:4000"
+                    }
+                });
+            }
+        } catch (fetchErr) {
+            console.error("Failed to ping web app for cache invalidation:", fetchErr);
+        }
+
         // 3. Send Welcome Email
         if (!isMe && email) {
             const loginUrl = `${process.env.ADMIN_URL}/login`;

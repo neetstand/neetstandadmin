@@ -154,6 +154,23 @@ export async function createSuperAdminAction(prevState: any, formData: FormData)
             roleId: superAdminRole.id
         }).onConflictDoNothing();
 
+        // Unlock the application!
+        await db.insert(settings).values({
+            variable: "maintenance_mode",
+            value: "false",
+            description: "Locks the application until a superadmin is configured."
+        }).onConflictDoUpdate({
+            target: settings.variable,
+            set: {
+                value: "false",
+                description: "Locks the application until a superadmin is configured.",
+                updatedAt: new Date()
+            }
+        });
+
+        // Invalidate settings cache
+        updateTag("settings");
+
         // Send Welcome Email
         // We assume email settings are already verified and saved in Step 1.
         // But if they are not, this might fail unless we default to looking up settings in sendEmail (which we do).

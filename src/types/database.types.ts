@@ -62,6 +62,68 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          city_events: boolean
+          course_launch: boolean
+          created_at: string
+          department_id: string | null
+          email: boolean
+          full_name: string | null
+          id: string
+          is_active: boolean | null
+          newsletter: boolean
+          otp_generated_at: string | null
+          phone: boolean
+          role: string
+          sms: boolean
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          city_events?: boolean
+          course_launch?: boolean
+          created_at?: string
+          department_id?: string | null
+          email?: boolean
+          full_name?: string | null
+          id: string
+          is_active?: boolean | null
+          newsletter?: boolean
+          otp_generated_at?: string | null
+          phone?: boolean
+          role?: string
+          sms?: boolean
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          city_events?: boolean
+          course_launch?: boolean
+          created_at?: string
+          department_id?: string | null
+          email?: boolean
+          full_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          newsletter?: boolean
+          otp_generated_at?: string | null
+          phone?: boolean
+          role?: string
+          sms?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_departments_id_fk"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           assigned_at: string
@@ -122,6 +184,27 @@ export type Database = {
         }
         Relationships: []
       }
+      settings: {
+        Row: {
+          description: string | null
+          updated_at: string
+          value: string
+          variable: string
+        }
+        Insert: {
+          description?: string | null
+          updated_at?: string
+          value: string
+          variable: string
+        }
+        Update: {
+          description?: string | null
+          updated_at?: string
+          value?: string
+          variable?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           assigned_at: string
@@ -147,64 +230,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_roles_user_id_users_id_fk"
+            foreignKeyName: "user_roles_user_id_profiles_id_fk"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      users: {
+      verification_codes: {
         Row: {
-          auth_id: string
-          avatar_url: string | null
-          created_at: string
-          department_id: string | null
-          email: string
-          full_name: string | null
+          code: string
+          created_at: string | null
+          expires_at: string
           id: string
-          is_active: boolean | null
-          updated_at: string
+          identifier: string
         }
         Insert: {
-          auth_id: string
-          avatar_url?: string | null
-          created_at?: string
-          department_id?: string | null
-          email: string
-          full_name?: string | null
+          code: string
+          created_at?: string | null
+          expires_at?: string
           id?: string
-          is_active?: boolean | null
-          updated_at?: string
+          identifier: string
         }
         Update: {
-          auth_id?: string
-          avatar_url?: string | null
-          created_at?: string
-          department_id?: string | null
-          email?: string
-          full_name?: string | null
+          code?: string
+          created_at?: string | null
+          expires_at?: string
           id?: string
-          is_active?: boolean | null
-          updated_at?: string
+          identifier?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "users_department_id_departments_id_fk"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_owner_exists: { Args: never; Returns: Json }
+      check_system_status: { Args: never; Returns: Json }
+      get_user_id_by_email: { Args: { p_email: string }; Returns: string }
+      send_email: {
+        Args: {
+          from_email: string
+          html_body: string
+          subject: string
+          to_email: string
+        }
+        Returns: string
+      }
+      store_otp:
+        | { Args: { p_code: string; p_identifier: string }; Returns: undefined }
+        | {
+            Args: {
+              p_code: string
+              p_identifier: string
+              p_supabase_token?: string
+            }
+            Returns: undefined
+          }
+      verify_custom_otp: {
+        Args: { p_code: string; p_identifier: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

@@ -64,10 +64,17 @@ export async function updateSession(request: NextRequest) {
         }
         // 2. Super Admin Setup Phase (Owner Active, but No Super Admin)
         else if (!superAdminExists) {
-            // Strict Setup Phase for Public: Block everything except /setup
-            // But allow Authenticated User (Owner) to proceed (e.g. to Dashboard)
-            if (!user && path !== '/setup') {
+            // Strict Setup Phase
+            // Exclude auth routes from being blocked so the owner can actually log in
+            if (path.startsWith('/auth') || path === '/login') {
+                // allow
+            } else if (!user && path !== '/setup') {
+                // Public users are forced to setup/login
                 return NextResponse.redirect(new URL('/setup', request.url))
+            } else if (user && path !== '/owner-dashboard' && path !== '/setup' && path !== '/login') {
+                // Authenticated Owner is forced to the owner-dashboard to finish setup
+                // Any other route like /xyz or /dashboard will hit this and redirect
+                return NextResponse.redirect(new URL('/owner-dashboard', request.url))
             }
         }
         // 3. System Complete (Super Admin Exists)

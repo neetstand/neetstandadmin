@@ -21,6 +21,12 @@ try {
     console.log("\n🌱 Seeding Roles...");
     execSync("npx tsx scripts/seed-roles.ts", { stdio: "inherit", cwd: targetCwd });
 
+    console.log("\n⚙️ Seeding Default Settings...");
+    execSync("npx tsx scripts/seed-settings.ts", { stdio: "inherit", cwd: targetCwd });
+
+    console.log("\n📚 Seeding Curriculum Data...");
+    execSync("npx tsx scripts/seed-curriculum.ts", { stdio: "inherit", cwd: targetCwd });
+
     console.log("\n✨ Fresh Start Complete! Database is clean and seeded.");
 } catch (error) {
     console.error("\n❌ Error during fresh start:", error);

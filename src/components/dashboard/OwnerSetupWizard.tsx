@@ -50,9 +50,7 @@ function SuperAdminSetupStep({ onComplete }: { onComplete: () => void }) {
         }
 
         if (success) {
-            // Force Signout and Redirect
-            const { signOutAction } = await import("@/actions/auth");
-            await signOutAction();
+            onComplete();
         }
     }
 

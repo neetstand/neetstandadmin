@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, text, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp, text, boolean, jsonb, integer } from "drizzle-orm/pg-core";
 import { departments } from "./departments";
 
 // We define a reference to auth.users if we want strict typing, but Drizzle doesn't support cross-schema FKs easily without defining the schema.
@@ -17,7 +17,20 @@ export const profiles = pgTable("profiles", {
     email: boolean("email").default(true).notNull(),
     sms: boolean("sms").default(true).notNull(),
     phone: boolean("phone").default(true).notNull(),
+    // Onboarding & Diagnostics
+    onboardingStatus: text("onboarding_status").default("NOT_STARTED").notNull(), // NOT_STARTED, INTENT_SELECTED, DIAGNOSTIC_TAKEN, PROFILING_COMPLETED, COMPLETED
+    diagnosticData: jsonb("diagnostic_data"),
+    targetExamYear: integer("target_exam_year"),
+    attemptCount: integer("attempt_count").default(0),
     otpGeneratedAt: timestamp("otp_generated_at", { withTimezone: true }),
+
+    // New Mentor-Led Onboarding Fields
+    currentClass: text("current_class"), // '11', '12', 'repeater'
+    lastNeetScore: integer("last_neet_score"),
+    averageMockScore: integer("average_mock_score"),
+    subjectStrengths: jsonb("subject_strengths"), // { physics: 'weak', chemistry: 'moderate', biology: 'strong' }
+    chapterStrengths: jsonb("chapter_strengths"), // { physics: { 'Rotational Motion': 'weak' } }
+    generatedPlan: jsonb("generated_plan"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

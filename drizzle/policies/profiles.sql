@@ -15,6 +15,7 @@ DROP POLICY IF EXISTS "Unified View Access" ON public.profiles;
 DROP POLICY IF EXISTS "Admins can modify profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Admins can update profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Admins can delete profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 
 -- 2. "Unified View Access" (Single SELECT policy for performance)
 -- Covers: Admins, Own Profile, Department Staff

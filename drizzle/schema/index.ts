@@ -5,3 +5,5 @@ export * from "./tables/permissions";
 export * from "./tables/role_permissions";
 export * from "./tables/departments";
 export * from "./tables/settings";
+export * from "./tables/chapters";
+export * from "./tables/sub_chapters";

@@ -89,6 +89,7 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
                         toast.error(result.error || "Login failed");
                         return;
                     }
+                    sessionStorage.setItem("admin_session", "active");
                     toast.success("Logged in successfully.");
                     router.push("/owner-dashboard");
                 } else {
