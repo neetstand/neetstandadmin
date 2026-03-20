@@ -2,7 +2,7 @@
 
 import { db } from "@drizzle/index";
 import { profiles, roles, userRoles } from "@drizzle/schema/index";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -55,23 +55,41 @@ export async function setupSuperAdmin(data: { isMe: boolean, email?: string, nam
 
 
         if (isMe) {
-            // Assign Superadmin to current user (Owner)
-            // 1. Ensure Owner is in users table
-            const existingUser = await db.select().from(profiles).where(eq(profiles.id, user.id)).limit(1);
+            // Owner is marking themselves as Superadmin.
+            const adminClient = createAdminClient();
 
-            if (!existingUser.length) {
-                // Create user record for Owner
-                const [newUser] = await db.insert(profiles).values({
-                    id: user.id, // Primary key is now the Auth ID
-                    fullName: "Owner",
-                }).returning();
+            // 1. Update auth.users with the special is_super_admin flag
+            // We use direct SQL instead of adminClient because is_super_admin 
+            // is often restricted via the GoTrue admin API even with a service key.
+            await db.execute(sql`UPDATE auth.users SET is_super_admin = true WHERE id = ${user.id}`);
 
-                targetUserId = newUser.id;
-            } else {
-                targetUserId = existingUser[0].id;
+            // 2. Assign the 'superadmin' role ID in the user_roles table too.
+            // This ensures all permissions, RBAC checks, and the sidebar immediately 
+            // recognize the owner as having Superadmin access without changing profiles.role.
+            if (saRoleId) {
+                await db.insert(userRoles).values({
+                    userId: user.id,
+                    roleId: saRoleId
+                }).onConflictDoNothing();
             }
 
-        } else {
+            // Unlock maintenance mode
+            const { settings } = await import("@drizzle/schema/tables/settings");
+            await db.insert(settings).values({
+                variable: "maintenance_mode",
+                value: "false",
+                description: "Locks the application until a superadmin is configured.",
+            }).onConflictDoUpdate({
+                target: settings.variable,
+                set: { value: "false", updatedAt: new Date() },
+            });
+
+            const { updateTag } = await import("next/cache");
+            updateTag("settings");
+
+            return { success: true };
+        }
+ else {
             // Invite logic
             // Check if user exists in Auth by email
             const adminAuthClient = createAdminClient();

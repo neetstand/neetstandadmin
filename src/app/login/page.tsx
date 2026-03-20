@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/server";
 
 interface SearchParams {
     code?: string;
+    error?: string;
 }
 
 export default async function LoginPage({
@@ -20,25 +21,15 @@ export default async function LoginPage({
         redirect("/setup");
     }
 
-    const { code } = await searchParams;
+    const { error: errorParam } = await searchParams;
     let message = "";
     let isError = false;
 
-    if (code) {
-        const supabase = await createClient();
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-            message = "Code is invalidated please start the process again.";
-            isError = true;
-        } else {
-            message = "Thanks for confirming.";
-            // Ideally we could redirect to dashboard, but user asked for message.
-            // However, after confirming, they should probably be logged in. 
-            // Let's redirect to dashboard if success? Or just show message on login form?
-            // "Thanks for confirming" implies they are done. 
-            // If they are logged in, the LoginForm usually redirects to dashboard or shows logged in state.
-            // Let's pass the message to the form.
-        }
+    if (errorParam === "invalid_code") {
+        message = "Code is invalidated please start the process again.";
+        isError = true;
+    } else if (errorParam === "confirmed") {
+        message = "Thanks for confirming. Please log in.";
     }
 
     // Determine mode based on active status

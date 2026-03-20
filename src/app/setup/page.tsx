@@ -1,50 +1,58 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import SetupForm from "./SetupForm"; // Reusing SetupForm for now, but configured for Owner
+import SetupForm from "./SetupForm";
 import { SetupService } from "@/services/setup";
 
 export default async function SetupPage() {
-    const supabase = await createClient(); // Await the promise!
-
-    // Check if ANY owner exists in the system (using service role to bypass RLS potentially, or public view)
-    // We can't use public client easily for this if RLS is tight. 
-    // Ideally we have a public RPC or we check based on auth state?
-    // BUT: The requirement is: "If an owner is not set then only this screen will open."
-    // This implies we need a way to check owner existence without being logged in.
-
-    // For now, let's try to fetch using a Service that can use Admin context if needed, 
-    // or we assume this page is public but checks DB.
-    // If strict RLS prevents reading profiles, we might need an edge function or RPC. 
-    // However, let's assume `profiles` is publicly readable for 'role' or we use a specific query.
-
-    // Let's rely on SetupService to have a method "isOwnerExists".
-    // I will need to implement `isOwnerExists` in SetupService or check here.
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
     const status = await SetupService.getOwnerStatus();
+    console.log("Current Setup Status:", status);
 
-    // System is only "closed" if Owner exists, is active, AND Super Admin is set.
+    // System fully setup — send to dashboard (if logged in) or login
     if (status.exists && status.active && status.superAdminExists) {
-        // System fully setup
-        const { data: { user } } = await supabase.auth.getUser();
         if (user) redirect("/dashboard");
         redirect("/login");
     }
 
     // Determine mode:
-    // 1. No Owner -> "create"
-    // 2. Owner Exists, Not Active -> "verify"
-    // 3. Owner Exists & Active -> "superadmin_setup"
-    let mode: "create" | "verify" | "superadmin_setup" = "create";
+    // 1. No Owner         -> "create"
+    // 2. Owner, Not Active -> "verify"
+    // 3. Owner Active, No Email -> "email_setup"
+    // 4. Owner Active, Email Ok -> "superadmin_setup"
+    let mode: "create" | "verify" | "email_setup" | "superadmin_setup" = "create";
+
     if (status.exists) {
-        mode = status.active ? "superadmin_setup" : "verify";
+        if (!status.active) {
+            mode = "verify";
+        } else {
+            const isEmailOk = await SetupService.isEmailConfigured();
+            console.log("Is Email Configured:", isEmailOk);
+            mode = isEmailOk ? "superadmin_setup" : "email_setup";
+        }
     }
+
+    // For superadmin_setup we need the superadmin role ID and the current user
+    const superadminRoleId = (mode === "superadmin_setup" || mode === "email_setup")
+        ? (await SetupService.getSuperadminRoleId()) ?? undefined
+        : undefined;
+
+    // Fetch email settings if in email_setup mode
+    const emailSettings = mode === "email_setup"
+        ? await SetupService.getEmailSettings()
+        : undefined;
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
             <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-md border border-slate-200">
-                {/* Header moved to SetupForm to handle dynamic text changes */}
-
-                <SetupForm isOwnerSetup={true} mode={mode} />
+                <SetupForm
+                    isOwnerSetup={true}
+                    mode={mode}
+                    currentUser={user}
+                    superadminRoleId={superadminRoleId}
+                    initialEmailSettings={emailSettings}
+                />
             </div>
         </div>
     );

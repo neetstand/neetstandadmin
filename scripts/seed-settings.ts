@@ -16,15 +16,21 @@ async function main() {
 
     console.log("Forcing initial maintenance_mode = true");
 
-    await db.insert(settings).values({
-        variable: "maintenance_mode",
-        value: "true",
-        description: "Locks the application until a superadmin is configured."
-    }).onConflictDoUpdate({
-        target: settings.variable,
-        set: {
+    await db.insert(settings).values([
+        {
+            variable: "maintenance_mode",
             value: "true",
             description: "Locks the application until a superadmin is configured."
+        },
+        {
+            variable: "killer_player",
+            value: "true",
+            description: "Enables exclusive killer video URLs across sub_chapters instead of standard URLs."
+        }
+    ]).onConflictDoUpdate({
+        target: settings.variable,
+        set: {
+            value: "true"
         }
     });
 

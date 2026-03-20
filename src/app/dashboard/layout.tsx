@@ -36,7 +36,9 @@ export default async function DashboardLayout({
     const emailSetting = await db.select().from(settings).where(eq(settings.variable, "email_api_key")).limit(1);
     const hasEmailConfig = emailSetting.length > 0 && !!emailSetting[0].value;
 
-    // 2. Check Super Admin Status
+    // 2. Check Super Admin Status via check_system_status RPC.
+    //    The RPC now checks: profiles.role = 'superadmin' OR is_also_superadmin = true
+    //    so both a dedicated superadmin user and an owner-as-superadmin are correctly detected.
     const adminAuthClient = createAdminClient();
     const { data: status } = await adminAuthClient.rpc("check_system_status");
     const hasSuperAdmin = status?.superadmin_exists || false;
@@ -70,6 +72,9 @@ export default async function DashboardLayout({
                     </Link>
                     <Link href="/dashboard/admins" className="block px-4 py-2 hover:bg-slate-800 rounded">
                         Admins
+                    </Link>
+                    <Link href="/dashboard/challenges" className="block px-4 py-2 hover:bg-slate-800 rounded">
+                        Challenges
                     </Link>
                     <Link href="/dashboard/profile" className="block px-4 py-2 hover:bg-slate-800 rounded">
                         Profile

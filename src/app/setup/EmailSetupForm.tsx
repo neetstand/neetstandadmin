@@ -1,11 +1,12 @@
-
 "use client";
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { saveEmailSettings, sendTestEmail, verifyEmailSetup, type EmailSettings } from "@/actions/settings";
 
 export default function EmailSetupForm({ initialConfig }: { initialConfig?: Partial<EmailSettings> }) {
+    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [testing, setTesting] = useState(false);
 
@@ -75,21 +76,17 @@ export default function EmailSetupForm({ initialConfig }: { initialConfig?: Part
         const result = await verifyEmailSetup();
         if (result.success) {
             toast.success("Email configuration confirmed!");
-            window.location.reload();
+            // Use router.refresh() to invalidate server components then reload
+            // In some Next.js versions, reload() might show stale data for SC.
+            router.refresh(); 
+            setTimeout(() => window.location.reload(), 100);
         } else {
             toast.error("Failed to confirm setup. Please try again.");
         }
     };
 
     return (
-        <div className="space-y-6">
-            <div className="text-center">
-                <h1 className="text-2xl font-bold text-slate-900">Step 1: Email Configuration</h1>
-                <p className="text-sm text-gray-600 mt-2">
-                    Enter your email provider details (e.g., Brevo API Key) to enable system emails.
-                </p>
-            </div>
-
+        <div className="space-y-6 mt-4">
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700">API Key</label>

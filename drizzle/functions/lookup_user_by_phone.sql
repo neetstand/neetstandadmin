@@ -1,5 +1,7 @@
 -- Function to lookup user by phone number
 -- Returns JSON: { found: boolean, multiple: boolean, email: string (if unique) }
+DROP FUNCTION IF EXISTS public.lookup_user_by_phone(text) CASCADE;
+
 CREATE OR REPLACE FUNCTION public.lookup_user_by_phone(p_phone text)
 RETURNS json
 LANGUAGE plpgsql

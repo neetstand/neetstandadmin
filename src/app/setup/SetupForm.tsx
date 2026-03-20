@@ -6,15 +6,18 @@ import { setupOwner, resendOwnerOTP, verifyLogin } from "@/actions/auth";
 import { toast } from "sonner";
 import { User } from "@supabase/supabase-js";
 
+import EmailSetupForm from "./EmailSetupForm";
+
 interface SetupFormProps {
     ownerId?: string;
     superadminRoleId?: string;
     isOwnerSetup?: boolean;
-    mode?: "create" | "verify" | "superadmin_setup";
+    mode?: "create" | "verify" | "email_setup" | "superadmin_setup";
     currentUser?: User | null;
+    initialEmailSettings?: any;
 }
 
-export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = false, mode = "create", currentUser }: SetupFormProps) {
+export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = false, mode = "create", currentUser, initialEmailSettings }: SetupFormProps) {
     const [isMe, setIsMe] = useState(false);
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
@@ -34,8 +37,12 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
     const handleResend = async () => {
         setLoading(true);
         try {
-            await resendOwnerOTP(email);
-            toast.success(`Verification email resent to ${email}.`);
+            const result = await resendOwnerOTP(email);
+            if (result.success && (result as any).message) {
+                toast.success((result as any).message);
+            } else {
+                toast.success(`Verification email resent to ${email}.`);
+            }
         } catch (error: any) {
             console.error(error);
             toast.error(error.message || "Failed to resend email.");
@@ -91,7 +98,7 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
                     }
                     sessionStorage.setItem("admin_session", "active");
                     toast.success("Logged in successfully.");
-                    router.push("/owner-dashboard");
+                    router.push("/dashboard");
                 } else {
                     // Superadmin Setup
                     // Server action
@@ -108,7 +115,9 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
                     }
 
                     toast.success("Super Admin configured!");
-                    router.push("/dashboard");
+                    // Hard navigation so layout Server Component fully re-executes
+                    // with fresh DB state (bypasses Next.js client-side cache).
+                    window.location.href = "/dashboard";
                 }
             }
         } catch (error: any) {
@@ -119,16 +128,64 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
         }
     };
 
-    const renderHeader = () => (
-        <>
-            <h1 className="text-3xl font-bold mb-4 text-slate-900 text-center">Owner Setup</h1>
-            <p className="text-gray-600 mb-8 text-center">
-                {(mode === "verify" || isVerificationSent)
-                    ? "Please verify your ownership."
-                    : "Setting up the Owner Account. Please provide your email to begin."}
-            </p>
-        </>
-    );
+    const renderHeader = () => {
+        const isEmailDone = mode === "superadmin_setup";
+        const isEmailActive = mode === "email_setup";
+        const isSuperActive = mode === "superadmin_setup";
+
+        // Only show steps after registration is confirmed
+        const showSteps = isEmailActive || isSuperActive;
+
+        return (
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold mb-2 text-slate-900 text-center">Owner Configuration</h1>
+                <p className="text-gray-500 mb-6 text-center text-sm">Follow the steps below to finish setup.</p>
+                
+                {showSteps && (
+                    <div className="flex items-center justify-center space-x-4 mb-2">
+                        {/* Step 1: Email Configuration */}
+                        <div className="flex flex-col items-center">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                                isEmailDone ? "bg-green-500 border-green-500 text-white" : 
+                                isEmailActive ? "bg-slate-900 border-slate-900 text-white" : 
+                                "bg-white border-slate-200 text-slate-400"
+                            }`}>
+                                {isEmailDone ? "✓" : "1"}
+                            </div>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider mt-2 ${
+                                isEmailDone || isEmailActive ? "text-slate-900" : "text-slate-400"
+                            }`}>Email Setup</span>
+                        </div>
+
+                        {/* Line */}
+                        <div className={`w-8 h-[2px] mb-6 ${isEmailDone ? "bg-green-500" : "bg-slate-200"}`}></div>
+
+                        {/* Step 2: Superadmin Setup */}
+                        <div className="flex flex-col items-center">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+                                isSuperActive ? "bg-slate-900 border-slate-900 text-white" : 
+                                "bg-white border-slate-200 text-slate-400"
+                            }`}>
+                                2
+                            </div>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider mt-2 ${
+                                isSuperActive ? "text-slate-900" : "text-slate-400"
+                            }`}>Super Admin</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Legacy text instructions for Create/Verify paths */}
+                {!showSteps && (
+                     <p className="text-gray-600 text-center">
+                        {(mode === "verify" || isVerificationSent)
+                            ? "Please verify your ownership via email."
+                            : "Provide your email to begin the setup."}
+                    </p>
+                )}
+            </div>
+        );
+    };
 
     if (mode === "verify" || isVerificationSent) {
         // ... (existing Check Inbox logic, ensure `handleResend` works)
@@ -156,20 +213,22 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
         );
     }
 
+    if (mode === "email_setup") {
+        return (
+            <div>
+                {renderHeader()}
+                <EmailSetupForm initialConfig={initialEmailSettings} />
+            </div>
+        );
+    }
+
     // Owner Creation OR Login Phase (SuperAdmin Setup but not logged in)
     if (mode === "create" || (mode === "superadmin_setup" && !currentUser)) {
         const isLogin = mode === "superadmin_setup";
 
         return (
             <div>
-                {!isLogin && renderHeader()}
-                {isLogin && (
-                    <>
-                        <h1 className="text-3xl font-bold mb-4 text-slate-900 text-center">Admin Login</h1>
-                        <p className="text-gray-600 mb-8 text-center">Please login to continue setup.</p>
-                    </>
-                )}
-
+                {renderHeader()}
                 <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Email Address</label>
@@ -218,9 +277,7 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
 
     return (
         <div>
-            <h1 className="text-3xl font-bold mb-4 text-slate-900 text-center">Super Admin Setup</h1>
-            <p className="text-gray-600 mb-8 text-center">Configure the first Super Admin account.</p>
-
+            {renderHeader()}
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="flex items-center space-x-3 bg-blue-50 p-4 rounded-md border border-blue-100">
                     <input
@@ -228,7 +285,8 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
                         id="isMe"
                         checked={isMe}
                         onChange={(e) => setIsMe(e.target.checked)}
-                        className="h-5 w-5 text-blue-600 rounded"
+                        disabled={loading}
+                        className="h-5 w-5 text-blue-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <label htmlFor="isMe" className="font-medium text-blue-900">
                         I am the Superadmin

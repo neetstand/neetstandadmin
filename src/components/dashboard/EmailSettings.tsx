@@ -19,8 +19,12 @@ export default function EmailSettings({ onSave, initialUrl = "https://api.brevo.
     async function handleSubmit(formData: FormData) {
         setLoading(true);
         try {
+            const payload = {
+                apiKey: formData.get("email_api_key") as string,
+                providerUrl: (formData.get("email_provider_url") as string) || "https://api.brevo.com/v3/smtp/email",
+            };
             // 1. Save Settings
-            const res = await saveEmailSettings(formData);
+            const res = await saveEmailSettings(payload);
             if (!res.success) {
                 toast.error(res.error || "Failed to save settings");
                 setLoading(false);

@@ -207,6 +207,11 @@ export async function verifyEmailSetup() {
         });
 
         updateTag("settings");
+        
+        // Invalidate the setup page so it re-checks status correctly
+        const { revalidatePath } = await import("next/cache");
+        revalidatePath("/setup");
+        
         return { success: true };
     } catch (error: any) {
         console.error("Failed to verify email setup:", error);

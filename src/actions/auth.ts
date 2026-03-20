@@ -1,11 +1,11 @@
 "use server";
 
 import { createAdminClient } from "@/utils/supabase/admin";
-
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { db } from "@drizzle/index";
 import { profiles } from "@drizzle/schema/tables/profiles";
+import { settings } from "@drizzle/schema/tables/settings";
 import { eq } from "drizzle-orm";
 
 function generateCode(): string {
@@ -31,6 +31,55 @@ async function getUserIdByEmail(email: string): Promise<string | null> {
     return data as string;
 }
 
+
+async function handleEmailFallback(email: string, type: 'signup' | 'invite') {
+    const adminClient = createAdminClient();
+    
+    // 1. Check if email is configured in settings
+    const emailConfig = await db.select().from(settings).where(eq(settings.variable, 'email_api_key')).limit(1);
+    const hasConfig = emailConfig.length > 0 && !!emailConfig[0].value;
+
+    if (!hasConfig) return false;
+
+    try {
+        // 2. Generate a confirmation link via Admin API
+        const linkParams: any = {
+            type: type === 'signup' ? 'signup' : 'magiclink',
+            email,
+            options: { redirectTo: `${process.env.ADMIN_URL || 'http://localhost:4000'}/auth/confirm?next=/login` }
+        };
+        
+        const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink(linkParams);
+
+        if (linkError || !linkData?.properties?.action_link) {
+            console.error("Link Generation Error:", linkError);
+            return false;
+        }
+
+        // 3. Send using our custom RPC
+        const subject = type === 'signup' ? "Verify your NeetStand Owner Account" : "NeetStand Login Link";
+        const htmlBody = `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Welcome to NeetStand</h2>
+                <p>Click the button below to verify your account and complete setup:</p>
+                <a href="${linkData.properties.action_link}" style="display: inline-block; padding: 12px 24px; background-color: #0f172a; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Verify Account</a>
+                <p style="margin-top: 24px; font-size: 14px; color: #64748b;">If the button doesn't work, copy and paste this link: <br/> ${linkData.properties.action_link}</p>
+            </div>
+        `;
+
+        await adminClient.rpc('send_email', {
+            to_email: email,
+            subject,
+            html_body: htmlBody
+        });
+
+        return true;
+    } catch (e) {
+        console.error("Manual Email Fallback Failed:", e);
+        return false;
+    }
+}
+
 export async function setupOwner(email: string, password: string, name: string) {
     if (await isSystemOwnerSet()) {
         throw new Error("System already has an owner.");
@@ -38,8 +87,8 @@ export async function setupOwner(email: string, password: string, name: string) 
 
     const supabase = await createClient();
 
-    // 2. Create User with Email + Password
-    const { error: signUpError } = await supabase.auth.signUp({
+    // 1. Create User with Email + Password
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -47,44 +96,95 @@ export async function setupOwner(email: string, password: string, name: string) 
                 full_name: name,
                 role: 'owner'
             },
-            emailRedirectTo: `${process.env.ADMIN_URL}/login`
+            emailRedirectTo: `${process.env.ADMIN_URL || 'http://localhost:4000'}/auth/confirm?next=/login`
         }
     });
 
     if (signUpError) {
-        // Silently handle "User already registered" to avoid server console noise
-        // Ensure we catch it regardless of case or minor wording differences
+        // If it's a rate limit error, try manual fallback
+        if (signUpError.message?.toLowerCase().includes("rate limit") || signUpError.status === 429) {
+            const fallbackSuccess = await handleEmailFallback(email, 'signup');
+            if (fallbackSuccess) {
+                return { success: true, manual: true };
+            }
+        }
+
+        // Standard error handling
         const msg = signUpError.message?.toLowerCase() || "";
         if (msg.includes("user already registered") || signUpError.code === "user_already_exists") {
             return { success: false, error: "User already registered" };
         }
-        console.error("SignUp Error Details:", JSON.stringify(signUpError, null, 2));
         throw signUpError;
     }
 
-    // Force sign out to prevent auto-login session from persisting
-    await supabase.auth.signOut();
-
-    // Standard SignUp sends confirmation email automatically (based on Supabase Project Settings).
-    // No manual Magic Link needed per user request.
+    // Do NOT signOut() here. If email confirmation is required, signUp doesn't
+    // start a session anyway, but it DOES set the PKCE verifier cookie.
+    // signOut() would nuke that cookie and break the verification link.
 
     return { success: true };
 }
 
 export async function resendOwnerOTP(email: string) {
+    // 1. Check if user is already confirmed
+    const adminClient = createAdminClient();
+    const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers();
+    if (listError) throw listError;
+    
+    const user = users.find(u => u.email === email);
+    if (user && user.email_confirmed_at) {
+        return { success: true, message: "Email already confirmed. Please log in." };
+    }
+
     const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-        email
+    
+    // 2. Try standard resend first (Sign Up confirmation)
+    const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+            emailRedirectTo: `${process.env.ADMIN_URL || 'http://localhost:4000'}/auth/confirm?next=/login`
+        }
     });
 
-    if (error) throw error;
+    if (resendError) {
+        // Fallback to manual send if rate limited
+        if (resendError.message?.toLowerCase().includes("rate limit") || resendError.status === 429) {
+            const fallbackSuccess = await handleEmailFallback(email, 'signup');
+            if (fallbackSuccess) {
+                return { success: true, manual: true };
+            }
+        }
+        
+        // Final attempt with magic link if confirmed signup resend fails for other reasons
+        const { error: otpError } = await supabase.auth.signInWithOtp({ 
+            email,
+            options: { emailRedirectTo: `${process.env.ADMIN_URL || 'http://localhost:4000'}/auth/confirm?next=/login` }
+        });
+        if (otpError) throw otpError;
+    }
+
     return { success: true };
 }
 
-// Helper to check if Super Admin exists
+// Helper to check if Super Admin exists (Consolidated logic)
 async function isSuperAdminSet() {
+    // 1. Check Profiles table (Standard Superadmin)
     const superAdmins = await db.select().from(profiles).where(eq(profiles.role, "superadmin")).limit(1);
-    return superAdmins.length > 0;
+    if (superAdmins.length > 0) return true;
+
+    // 2. Check Auth.Users for is_super_admin (Owner-as-Superadmin)
+    const adminClient = createAdminClient();
+    try {
+        // We use a safe check: list any user with is_super_admin flag
+        // Note: listUsers() doesn't filter by columns directly in SDK, so we check the result
+        const { data: { users }, error } = await adminClient.auth.admin.listUsers();
+        if (error) throw error;
+        
+        return users.some(u => (u as any).is_super_admin === true);
+    } catch (e) {
+        console.error("isSuperAdminSet Auth check failed:", e);
+        return false;
+    }
 }
 
 export async function login(email: string) {

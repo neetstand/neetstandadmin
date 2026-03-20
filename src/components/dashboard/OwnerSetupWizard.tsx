@@ -68,7 +68,8 @@ function SuperAdminSetupStep({ onComplete }: { onComplete: () => void }) {
                         id="isMe"
                         checked={isMe}
                         onChange={(e) => setIsMe(e.target.checked)}
-                        className="h-5 w-5 text-blue-600 rounded"
+                        disabled={loading}
+                        className="h-5 w-5 text-blue-600 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <label htmlFor="isMe" className="font-medium text-blue-900 cursor-pointer">
                         I am the Superadmin
@@ -116,7 +117,9 @@ export default function OwnerSetupWizard({ initialStep = 1 }: { initialStep?: nu
     const [step, setStep] = useState(initialStep);
 
     const onFinish = () => {
-        router.refresh(); // Refresh to let layout re-evaluate the check
+        // Hard navigation: forces the layout Server Component to re-execute
+        // and re-check hasSuperAdmin with fresh DB state.
+        window.location.href = "/dashboard";
     };
 
     return (

@@ -1,5 +1,6 @@
 import { pgTable, uuid, timestamp, text, boolean, jsonb, integer } from "drizzle-orm/pg-core";
 import { departments } from "./departments";
+import { sprintPlans } from "./sprint_plans";
 
 // We define a reference to auth.users if we want strict typing, but Drizzle doesn't support cross-schema FKs easily without defining the schema.
 // For now, we rely on the DB constraint we added manually.
@@ -22,6 +23,7 @@ export const profiles = pgTable("profiles", {
     diagnosticData: jsonb("diagnostic_data"),
     targetExamYear: integer("target_exam_year"),
     attemptCount: integer("attempt_count").default(0),
+    hasPaid: boolean("has_paid").default(false),
     otpGeneratedAt: timestamp("otp_generated_at", { withTimezone: true }),
 
     // New Mentor-Led Onboarding Fields
@@ -31,6 +33,7 @@ export const profiles = pgTable("profiles", {
     subjectStrengths: jsonb("subject_strengths"), // { physics: 'weak', chemistry: 'moderate', biology: 'strong' }
     chapterStrengths: jsonb("chapter_strengths"), // { physics: { 'Rotational Motion': 'weak' } }
     generatedPlan: jsonb("generated_plan"),
+    activeSprintPlanId: uuid("active_sprint_plan_id").references(() => sprintPlans.id, { onDelete: 'set null' }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -38,6 +41,10 @@ export const profiles = pgTable("profiles", {
 import { relations } from "drizzle-orm";
 import { userRoles } from "./user_roles";
 
-export const profilesRelations = relations(profiles, ({ many }) => ({
+export const profilesRelations = relations(profiles, ({ one, many }) => ({
     userRoles: many(userRoles),
+    activeSprintPlan: one(sprintPlans, {
+        fields: [profiles.activeSprintPlanId],
+        references: [sprintPlans.id],
+    }),
 }));

@@ -71,10 +71,9 @@ export async function updateSession(request: NextRequest) {
             } else if (!user && path !== '/setup') {
                 // Public users are forced to setup/login
                 return NextResponse.redirect(new URL('/setup', request.url))
-            } else if (user && path !== '/owner-dashboard' && path !== '/setup' && path !== '/login') {
-                // Authenticated Owner is forced to the owner-dashboard to finish setup
-                // Any other route like /xyz or /dashboard will hit this and redirect
-                return NextResponse.redirect(new URL('/owner-dashboard', request.url))
+            } else if (user && path !== '/setup' && path !== '/login') {
+                // Authenticated Owner is forced to /setup to finish initialization
+                return NextResponse.redirect(new URL('/setup', request.url))
             }
         }
         // 3. System Complete (Super Admin Exists)
@@ -84,8 +83,8 @@ export async function updateSession(request: NextRequest) {
                 return NextResponse.redirect(new URL('/login', request.url))
             }
 
-            // Protected routes pattern: Dashboard AND Root AND Owner Dashboard
-            if (path.startsWith('/dashboard') || path.startsWith('/owner-dashboard') || path === '/') {
+            // Protected routes pattern: Dashboard AND Root
+            if (path.startsWith('/dashboard') || path === '/') {
                 if (!user) {
                     return NextResponse.redirect(new URL('/login', request.url))
                 }

@@ -75,7 +75,7 @@ export default function LoginForm({ mode, initialMessage = "", initialIsError = 
             if (result.role === "owner") {
                 // Strict Tab Session: Mark this tab as authenticated
                 sessionStorage.setItem("admin_session", "active");
-                router.push("/owner-dashboard");
+                router.push("/dashboard");
             } else {
                 sessionStorage.setItem("admin_session", "active");
                 router.push("/dashboard");

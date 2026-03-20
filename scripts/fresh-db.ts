@@ -18,14 +18,17 @@ try {
     console.log("\n📜 Deploying SQL Functions, Triggers & Policies...");
     execSync("npx tsx scripts/deploy-sql.ts", { stdio: "inherit", cwd: targetCwd });
 
-    console.log("\n🌱 Seeding Roles...");
-    execSync("npx tsx scripts/seed-roles.ts", { stdio: "inherit", cwd: targetCwd });
+    const scriptsDir = path.join(targetCwd, "scripts");
+    if (fs.existsSync(scriptsDir)) {
+        const seedFiles = fs.readdirSync(scriptsDir)
+            .filter((f) => f.startsWith("seed-") && f.endsWith(".ts"))
+            .sort(); // Sort alphabetically to maintain a deterministic order
 
-    console.log("\n⚙️ Seeding Default Settings...");
-    execSync("npx tsx scripts/seed-settings.ts", { stdio: "inherit", cwd: targetCwd });
-
-    console.log("\n📚 Seeding Curriculum Data...");
-    execSync("npx tsx scripts/seed-curriculum.ts", { stdio: "inherit", cwd: targetCwd });
+        for (const seedFile of seedFiles) {
+            console.log(`\n🌱 Auto-seeding: ${seedFile}...`);
+            execSync(`npx tsx scripts/${seedFile}`, { stdio: "inherit", cwd: targetCwd });
+        }
+    }
 
     console.log("\n✨ Fresh Start Complete! Database is clean and seeded.");
 } catch (error) {
