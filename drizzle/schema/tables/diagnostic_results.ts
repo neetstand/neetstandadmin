@@ -10,5 +10,6 @@ export const diagnosticResults = pgTable("diagnostic_results", {
     topicWisePerformance: jsonb("topic_wise_performance"),
     conceptWisePerformance: jsonb("concept_wise_performance"),
     weakAreas: jsonb("weak_areas"),
+    interactionData: jsonb("interaction_data"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

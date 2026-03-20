@@ -8,7 +8,7 @@ export default async function SetupPage() {
     const { data: { user } } = await supabase.auth.getUser();
 
     const status = await SetupService.getOwnerStatus();
-    console.log("Current Setup Status:", status);
+
 
     // System fully setup — send to dashboard (if logged in) or login
     if (status.exists && status.active && status.superAdminExists) {
@@ -28,7 +28,7 @@ export default async function SetupPage() {
             mode = "verify";
         } else {
             const isEmailOk = await SetupService.isEmailConfigured();
-            console.log("Is Email Configured:", isEmailOk);
+
             mode = isEmailOk ? "superadmin_setup" : "email_setup";
         }
     }

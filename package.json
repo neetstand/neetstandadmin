@@ -12,9 +12,10 @@
     "db:studio": "drizzle-kit studio",
     "gen:types": "npx supabase gen types typescript --project-id hkmkxkvrkfwgiutajvbf --schema public > src/types/database.types.ts",
     "db:setup": "drizzle-kit push --force && npx tsx scripts/fresh-db.ts",
-    "db:setup:prod": "node --env-file=.env.production node_modules/.bin/drizzle-kit push --force && node --env-file=.env.production node_modules/.bin/tsx scripts/fresh-db.ts",
+    "db:setup:prod": "npx drizzle-kit push --force --config drizzle.config.ts && npx tsx --env-file=.env.production scripts/fresh-db.ts",
     "db:updates": "drizzle-kit push --force && npx tsx scripts/deploy-sql.ts",
-    "db:migrate:prod": "node --env-file=.env.production node_modules/.bin/drizzle-kit push"
+    "db:migrate:prod": "npx drizzle-kit push --config drizzle.config.ts",
+    "copy:table": "ts-node src/utils/dbMove.ts"
   },
   "dependencies": {
     "@radix-ui/react-switch": "^1.2.6",
@@ -43,6 +44,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

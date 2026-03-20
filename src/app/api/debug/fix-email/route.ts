@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
     try {
-        console.log("Started DB Fix via API...");
+
 
         // 1. Create Table
         await db.execute(sql`

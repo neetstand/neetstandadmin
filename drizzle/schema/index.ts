@@ -21,3 +21,4 @@ export * from "./tables/diagnostic_attempts";
 export * from "./tables/diagnostic_questions";
 export * from "./tables/diagnostic_results";
 export * from "./tables/question_challenges";
+export * from "./tables/diagnostic_test_refresh";

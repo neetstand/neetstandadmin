@@ -13,7 +13,7 @@ const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client);
 
 async function main() {
-    console.log("Seeding roles...");
+
     const roleData = [
         { name: "owner", description: "System Owner", hierarchyLevel: 100 },
         { name: "superadmin", description: "Super Administrator", hierarchyLevel: 90 },
@@ -29,7 +29,7 @@ async function main() {
             set: role // Update description/level if needed
         });
     }
-    console.log("Roles seeded.");
+
     process.exit(0);
 }
 

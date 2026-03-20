@@ -44,11 +44,11 @@ export default function EmailSetupForm({ initialConfig }: { initialConfig?: Part
 
     const handleTestEmail = async () => {
         setTesting(true);
-        console.log("Starting Test Email Flow...");
+
         try {
             // 1. Save Settings First
             const saveResult = await saveEmailSettings(formData);
-            console.log("Save Result:", saveResult);
+
             if (!saveResult.success) {
                 toast.error(saveResult.error || "Failed to save settings.");
                 return;
@@ -56,7 +56,7 @@ export default function EmailSetupForm({ initialConfig }: { initialConfig?: Part
 
             // 2. Send Test Email
             const result = await sendTestEmail();
-            console.log("Send Email Result:", result);
+
 
             if (result.success) {
                 toast.success("Test email sent! Please check your inbox.");

@@ -19,13 +19,13 @@ const emailQueue = pgTable("email_queue", {
 });
 
 export async function processEmailQueue() {
-    console.log("Processing Email Queue...");
+
 
     // 1. Fetch Pending Emails
     const pending = await db.select().from(emailQueue).where(eq(emailQueue.status, "pending")).limit(5);
 
     if (pending.length === 0) {
-        console.log("No pending emails.");
+
         return;
     }
 
@@ -44,7 +44,7 @@ export async function processEmailQueue() {
     // 3. Process Each
     for (const email of pending) {
         try {
-            console.log(`Sending email to ${email.toEmail}...`);
+
             const response = await fetch(providerUrl, {
                 method: "POST",
                 headers: {
@@ -70,7 +70,7 @@ export async function processEmailQueue() {
                 .set({ status: "sent", processedAt: new Date() })
                 .where(eq(emailQueue.id, email.id));
 
-            console.log(`Email ${email.id} sent successfully.`);
+
 
         } catch (error: any) {
             console.error(`Failed to send email ${email.id}:`, error);

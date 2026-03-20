@@ -251,7 +251,7 @@ export async function saveMaintenanceMode(enabled: boolean) {
         }
 
         // Refresh Web App Cache FIRST
-        console.log("Refreshing Web App Settings. URL:", process.env.WEB_URL);
+
 
         if (!process.env.WEB_URL || !process.env.ADMIN_API_KEY) {
             console.error("Missing WEB_URL or ADMIN_API_KEY environment variables.");
