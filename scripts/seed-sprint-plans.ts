@@ -2,7 +2,8 @@ import * as dotenv from "dotenv";
 import * as path from "path";
 
 console.log("Loading Sprint Plans Seeder...");
-const envPath = path.resolve(process.cwd(), ".env.local");
+const envFile = process.env.APP_ENV === "production" ? ".env.production" : ".env.local";
+const envPath = path.resolve(process.cwd(), envFile);
 dotenv.config({ path: envPath });
 
 async function main() {

@@ -1,7 +1,7 @@
 import { defineConfig } from "drizzle-kit";
 import * as dotenv from "dotenv";
 
-dotenv.config({ path: ".env.local", override: false });
+dotenv.config({ path: process.env.APP_ENV === "production" ? ".env.production" : ".env.local", override: false });
 
 export default defineConfig({
     schema: "./drizzle/schema/tables/*.ts",

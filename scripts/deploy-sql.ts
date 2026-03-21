@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: process.env.APP_ENV === "production" ? ".env.production" : ".env.local" });
 
 async function deploySql() {
     if (!process.env.DATABASE_URL) {

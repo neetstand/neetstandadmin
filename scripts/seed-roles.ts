@@ -6,7 +6,8 @@ import { eq } from "drizzle-orm";
 console.log("Script loaded.");
 
 // Load env vars explicitly
-const envPath = path.resolve(process.cwd(), ".env.local");
+const envFile = process.env.APP_ENV === "production" ? ".env.production" : ".env.local";
+const envPath = path.resolve(process.cwd(), envFile);
 console.log("Loading env from:", envPath);
 dotenv.config({ path: envPath });
 
