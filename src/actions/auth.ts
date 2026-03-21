@@ -34,7 +34,7 @@ async function getUserIdByEmail(email: string): Promise<string | null> {
 
 async function handleEmailFallback(email: string, type: 'signup' | 'invite') {
     const adminClient = createAdminClient();
-    
+
     // 1. Check if email is configured in settings
     const emailConfig = await db.select().from(settings).where(eq(settings.variable, 'email_api_key')).limit(1);
     const hasConfig = emailConfig.length > 0 && !!emailConfig[0].value;
@@ -46,9 +46,10 @@ async function handleEmailFallback(email: string, type: 'signup' | 'invite') {
         const linkParams: any = {
             type: type === 'signup' ? 'signup' : 'magiclink',
             email,
-            options: { redirectTo: `${process.env.ADMIN_URL || 'http://localhost:4000'}/auth/confirm?next=/login` }
+            // options: { redirectTo: `${process.env.ADMIN_URL || 'http://localhost:4000'}/auth/confirm?next=/login` }
+            options: { redirectTo: `https://admin.neetstand.com/auth/confirm?next=/login` }
         };
-        
+
         const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink(linkParams);
 
         if (linkError || !linkData?.properties?.action_link) {
@@ -96,7 +97,8 @@ export async function setupOwner(email: string, password: string, name: string) 
                 full_name: name,
                 role: 'owner'
             },
-            emailRedirectTo: `${process.env.ADMIN_URL || 'http://localhost:4000'}/auth/confirm?next=/login`
+            // emailRedirectTo: `${process.env.ADMIN_URL}/auth/confirm?next=/login`
+            emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/login`
         }
     });
 
@@ -129,20 +131,21 @@ export async function resendOwnerOTP(email: string) {
     const adminClient = createAdminClient();
     const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers();
     if (listError) throw listError;
-    
+
     const user = users.find(u => u.email === email);
     if (user && user.email_confirmed_at) {
         return { success: true, message: "Email already confirmed. Please log in." };
     }
 
     const supabase = await createClient();
-    
+
     // 2. Try standard resend first (Sign Up confirmation)
     const { error: resendError } = await supabase.auth.resend({
         type: 'signup',
         email,
         options: {
-            emailRedirectTo: `${process.env.ADMIN_URL || 'http://localhost:4000'}/auth/confirm?next=/login`
+            // emailRedirectTo: `${process.env.ADMIN_URL}/auth/confirm?next=/login`
+            emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/login`
         }
     });
 
@@ -154,11 +157,12 @@ export async function resendOwnerOTP(email: string) {
                 return { success: true, manual: true };
             }
         }
-        
+
         // Final attempt with magic link if confirmed signup resend fails for other reasons
-        const { error: otpError } = await supabase.auth.signInWithOtp({ 
+        const { error: otpError } = await supabase.auth.signInWithOtp({
             email,
-            options: { emailRedirectTo: `${process.env.ADMIN_URL || 'http://localhost:4000'}/auth/confirm?next=/login` }
+            // options: { emailRedirectTo: `${process.env.ADMIN_URL}/auth/confirm?next=/login` }
+            options: { emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/login` }
         });
         if (otpError) throw otpError;
     }
@@ -179,7 +183,7 @@ async function isSuperAdminSet() {
         // Note: listUsers() doesn't filter by columns directly in SDK, so we check the result
         const { data: { users }, error } = await adminClient.auth.admin.listUsers();
         if (error) throw error;
-        
+
         return users.some(u => (u as any).is_super_admin === true);
     } catch (e) {
         console.error("isSuperAdminSet Auth check failed:", e);
