@@ -88,7 +88,7 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
                 // We stay on page for verification.
                 setIsVerificationSent(true);
                 toast.success(`Account created! Please verify your email.`);
-            } else if (mode === "superadmin_setup") {
+            } else if (mode === "superadmin_setup" || mode === "email_setup") {
                 if (!currentUser) {
                     // Login
                     const result = await verifyLogin(email, password);
@@ -98,7 +98,8 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
                     }
                     sessionStorage.setItem("admin_session", "active");
                     toast.success("Logged in successfully.");
-                    router.push("/dashboard");
+                    // Reload the page to progress to the next setup step with the new session
+                    window.location.reload();
                 } else {
                     // Superadmin Setup
                     // Server action
@@ -213,7 +214,7 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
         );
     }
 
-    if (mode === "email_setup") {
+    if (mode === "email_setup" && currentUser) {
         return (
             <div>
                 {renderHeader()}
@@ -222,9 +223,9 @@ export default function SetupForm({ ownerId, superadminRoleId, isOwnerSetup = fa
         );
     }
 
-    // Owner Creation OR Login Phase (SuperAdmin Setup but not logged in)
-    if (mode === "create" || (mode === "superadmin_setup" && !currentUser)) {
-        const isLogin = mode === "superadmin_setup";
+    // Owner Creation OR Login Phase (SuperAdmin Setup / Email Setup but not logged in)
+    if (mode === "create" || ((mode === "superadmin_setup" || mode === "email_setup") && !currentUser)) {
+        const isLogin = (mode === "superadmin_setup" || mode === "email_setup") && !currentUser;
 
         return (
             <div>
