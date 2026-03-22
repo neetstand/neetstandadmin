@@ -253,11 +253,16 @@ export async function saveMaintenanceMode(enabled: boolean) {
         // Refresh Web App Cache FIRST
 
 
-        const webUrl = process.env.NEXT_PUBLIC_WEB_URL || process.env.WEB_URL;
+        let webUrl = process.env.NEXT_PUBLIC_WEB_URL || process.env.WEB_URL;
 
         if (!webUrl || !process.env.ADMIN_API_KEY) {
             console.error("Missing NEXT_PUBLIC_WEB_URL or ADMIN_API_KEY environment variables.");
             return { success: false, error: "System Configuration Error: Missing Environment Variables" };
+        }
+
+        // Force HTTPS in production to prevent 308 redirects that drop the Authorization header
+        if (webUrl.includes("neetstand.com") && webUrl.startsWith("http://")) {
+            webUrl = webUrl.replace("http://", "https://");
         }
 
         try {
