@@ -58,4 +58,4 @@ Once the Owner is set up and email is verified:
 
 ## 6. Maintenance Mode
 - Can be toggled by Owner or Super Admin from the Dashboard (`/dashboard/maintenance`).
-- Requires `WEB_URL` and `ADMIN_API_KEY` to be set to properly clear the Web App's cache.
+- Requires `NEXT_PUBLIC_URL` and `NEXT_PUBLIC_ADMIN_API_KEY` to be set to properly clear the Web App's cache.
