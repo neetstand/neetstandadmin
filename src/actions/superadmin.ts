@@ -89,7 +89,7 @@ export async function setupSuperAdmin(data: { isMe: boolean, email?: string, nam
 
             return { success: true };
         }
- else {
+        else {
             // Invite logic
             // Check if user exists in Auth by email
             const adminAuthClient = createAdminClient();
@@ -202,7 +202,7 @@ export async function setupSuperAdmin(data: { isMe: boolean, email?: string, nam
                     method: "POST",
                     headers: {
                         "Authorization": `Bearer ${adminApiKey}`,
-                        "Origin": process.env.ADMIN_URL || "http://localhost:4000"
+                        "Origin": process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:4000"
                     }
                 });
             }
@@ -212,7 +212,7 @@ export async function setupSuperAdmin(data: { isMe: boolean, email?: string, nam
 
         // 3. Send Welcome Email
         if (!isMe && email) {
-            const loginUrl = `${process.env.ADMIN_URL}/login`;
+            const loginUrl = `${process.env.NEXT_PUBLIC_ADMIN_URL}/login`;
             const adminAuthClient = createAdminClient();
             const { error: emailError } = await adminAuthClient.rpc("send_email", {
                 to_email: email,

@@ -207,11 +207,11 @@ export async function verifyEmailSetup() {
         });
 
         updateTag("settings");
-        
+
         // Invalidate the setup page so it re-checks status correctly
         const { revalidatePath } = await import("next/cache");
         revalidatePath("/setup");
-        
+
         return { success: true };
     } catch (error: any) {
         console.error("Failed to verify email setup:", error);
@@ -263,7 +263,7 @@ export async function saveMaintenanceMode(enabled: boolean) {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${process.env.ADMIN_API_KEY}`,
-                    "Origin": process.env.ADMIN_URL || "http://localhost:4000" // Send origin for validation
+                    "Origin": process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:4000" // Send origin for validation
                 },
                 cache: "no-store",
             });

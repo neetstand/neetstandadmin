@@ -46,8 +46,8 @@ async function handleEmailFallback(email: string, type: 'signup' | 'invite') {
         const linkParams: any = {
             type: type === 'signup' ? 'signup' : 'magiclink',
             email,
-            // options: { redirectTo: `${process.env.ADMIN_URL || 'http://localhost:4000'}/auth/confirm?next=/login` }
-            options: { redirectTo: `https://admin.neetstand.com/auth/confirm?next=/login` }
+            options: { redirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL}/auth/confirm?next=/login` }
+            // options: { redirectTo: `https://admin.neetstand.com/auth/confirm?next=/login` }
         };
 
         const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink(linkParams);
@@ -97,7 +97,7 @@ export async function setupOwner(email: string, password: string, name: string) 
                 full_name: name,
                 role: 'owner'
             },
-            // emailRedirectTo: `${process.env.ADMIN_URL}/auth/confirm?next=/login`
+            // emailRedirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL}/auth/confirm?next=/login`
             emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/login`
         }
     });
@@ -144,7 +144,7 @@ export async function resendOwnerOTP(email: string) {
         type: 'signup',
         email,
         options: {
-            // emailRedirectTo: `${process.env.ADMIN_URL}/auth/confirm?next=/login`
+            // emailRedirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL}/auth/confirm?next=/login`
             emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/login`
         }
     });
@@ -161,7 +161,7 @@ export async function resendOwnerOTP(email: string) {
         // Final attempt with magic link if confirmed signup resend fails for other reasons
         const { error: otpError } = await supabase.auth.signInWithOtp({
             email,
-            // options: { emailRedirectTo: `${process.env.ADMIN_URL}/auth/confirm?next=/login` }
+            // options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL}/auth/confirm?next=/login` }
             options: { emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/login` }
         });
         if (otpError) throw otpError;

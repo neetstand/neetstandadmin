@@ -76,7 +76,7 @@ export async function initiateTransfer(newOwnerEmail: string) {
     });
 
     // 3. Send Email
-    const link = `${process.env.ADMIN_URL}/owner/transfer/accept?token=${token}`;
+    const link = `${process.env.NEXT_PUBLIC_ADMIN_URL}/owner/transfer/accept?token=${token}`;
     const adminAuthClient = createAdminClient();
     const { error: emailError } = await adminAuthClient.rpc("send_email", {
         to_email: newOwnerEmail,
