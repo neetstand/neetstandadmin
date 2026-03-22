@@ -97,8 +97,8 @@ export async function setupOwner(email: string, password: string, name: string) 
                 full_name: name,
                 role: 'owner'
             },
-            // emailRedirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL}/auth/confirm?next=/login`
-            emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/login`
+            emailRedirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL}/auth/confirm?next=/setup`
+            // emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/setup`
         }
     });
 
@@ -144,8 +144,8 @@ export async function resendOwnerOTP(email: string) {
         type: 'signup',
         email,
         options: {
-            // emailRedirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL}/auth/confirm?next=/login`
-            emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/login`
+            emailRedirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL}/auth/confirm?next=/setup`
+            // emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/login`
         }
     });
 
@@ -161,8 +161,8 @@ export async function resendOwnerOTP(email: string) {
         // Final attempt with magic link if confirmed signup resend fails for other reasons
         const { error: otpError } = await supabase.auth.signInWithOtp({
             email,
-            // options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL}/auth/confirm?next=/login` }
-            options: { emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/login` }
+            options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_ADMIN_URL}/auth/confirm?next=/setup` }
+            // options: { emailRedirectTo: `https://admin.neetstand.com/auth/confirm?next=/login` }
         });
         if (otpError) throw otpError;
     }

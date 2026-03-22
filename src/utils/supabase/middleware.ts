@@ -59,10 +59,13 @@ export async function updateSession(request: NextRequest) {
         // 1. Owner Setup Phase (Not Exists OR Inactive)
         if (!ownerExists || !ownerActive) {
             if (path !== '/setup') {
-                return NextResponse.redirect(new URL('/setup', request.url))
+                const redirectResponse = NextResponse.redirect(new URL('/setup', request.url));
+                response.cookies.getAll().forEach(cookie => {
+                    redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+                });
+                return redirectResponse;
             }
         }
-        // 2. Super Admin Setup Phase (Owner Active, but No Super Admin)
         else if (!superAdminExists) {
             // Strict Setup Phase
             // Exclude auth routes from being blocked so the owner can actually log in
@@ -70,41 +73,42 @@ export async function updateSession(request: NextRequest) {
                 // allow
             } else if (!user && path !== '/setup') {
                 // Public users are forced to setup/login
-                return NextResponse.redirect(new URL('/setup', request.url))
+                const redirectResponse = NextResponse.redirect(new URL('/setup', request.url));
+                response.cookies.getAll().forEach(cookie => {
+                    redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+                });
+                return redirectResponse;
             } else if (user && path !== '/setup' && path !== '/login') {
                 // Authenticated Owner is forced to /setup to finish initialization
-                return NextResponse.redirect(new URL('/setup', request.url))
+                const redirectResponse = NextResponse.redirect(new URL('/setup', request.url));
+                response.cookies.getAll().forEach(cookie => {
+                    redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+                });
+                return redirectResponse;
             }
         }
-        // 3. System Complete (Super Admin Exists)
         else {
             // Block Setup
             if (path === '/setup') {
-                return NextResponse.redirect(new URL('/login', request.url))
+                const redirectResponse = NextResponse.redirect(new URL('/login', request.url));
+                response.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie.name, cookie.value, cookie));
+                return redirectResponse;
             }
 
             // Protected routes pattern: Dashboard AND Root
             if (path.startsWith('/dashboard') || path === '/') {
                 if (!user) {
-                    return NextResponse.redirect(new URL('/login', request.url))
+                    const redirectResponse = NextResponse.redirect(new URL('/login', request.url));
+                    response.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie.name, cookie.value, cookie));
+                    return redirectResponse;
                 }
             }
 
             // Redirect to dashboard if logged in and visiting login or root
             if ((path === '/login' || path === '/') && user) {
-                // Determine where to redirect based on role is hard in middleware without DB access.
-                // However, since we are doing client-side redirect in LoginForm, the LOGIN page visit is less critical.
-                // But for Root '/', we need to pick one.
-                // Middleware runs on Edge, so no DB access typically unless via API.
-                // We'll stick to /dashboard for generic redirect for now, 
-                // OR checking user metadata? User metadata has 'role'.
-
-                const role = user.user_metadata?.role;
-                if (role === 'owner') {
-                    return NextResponse.redirect(new URL('/dashboard', request.url))
-                }
-
-                return NextResponse.redirect(new URL('/dashboard', request.url))
+                const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
+                response.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie.name, cookie.value, cookie));
+                return redirectResponse;
             }
         }
     }
